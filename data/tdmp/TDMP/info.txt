@@ -1,0 +1,5 @@
+This lua launches only with TDMP DLL injected.
+
+Credits:
+squareblock and SnakeyWakey - For giving access to use their player models
+micro - for giving access to use his code (Another version of function QuatLookAt)

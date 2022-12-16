@@ -1,0 +1,5 @@
+name = TDMP
+author = TDMP Team
+description = This mod is used for spawning default playermodels via scripts
+Credits:
+squareblock and SnakeyWakey - For giving access to use their player models

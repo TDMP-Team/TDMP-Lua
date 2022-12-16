@@ -1,0 +1,44 @@
+vox/player/human.xml : TDMP Models/Human
+vox/player/human_ragdoll.xml : TDMP Models/Human Ragdoll
+
+vox/player/astronaut.xml : TDMP Models/Astronaut
+vox/player/astronaut_ragdoll.xml : TDMP Models/Astronaut Ragdoll
+
+vox/player/bluewhiteshirt.xml : TDMP Models/Blue shirt guy
+vox/player/bluewhiteshirt_ragdoll.xml : TDMP Models/Blue shirt guy Ragdoll
+
+vox/player/bussiness.xml : TDMP Models/Bussiness Man
+vox/player/bussiness_ragdoll.xml : TDMP Models/Bussiness Man Ragdoll
+
+vox/player/chaos.xml : TDMP Models/Chaos
+vox/player/chaos_ragdoll.xml : TDMP Models/Chaos Ragdoll
+
+vox/player/fancy.xml : TDMP Models/Fancy
+vox/player/fancy_ragdoll.xml : TDMP Models/Fancy Ragdoll
+
+vox/player/james.xml : TDMP Models/James
+vox/player/james_ragdoll.xml : TDMP Models/James Ragdoll
+
+vox/player/jeremy.xml : TDMP Models/Jeremy
+vox/player/jeremy_ragdoll.xml : TDMP Models/Jeremy Ragdoll
+
+vox/player/mclockellesemployee.xml : TDMP Models/Mclockelles employee
+vox/player/mclockellesemployee_ragdoll.xml : TDMP Models/Mclockelles employee Ragdoll
+
+vox/player/revamped.xml : TDMP Models/Human Revamped
+vox/player/revamped_ragdoll.xml : TDMP Models/Human Revamped Ragdoll
+
+vox/player/richard.xml : TDMP Models/Richard
+vox/player/richard_ragdoll.xml : TDMP Models/Richard Ragdoll
+
+vox/player/scientist.xml : TDMP Models/Scientist
+vox/player/scientist_ragdoll.xml : TDMP Models/Scientist Ragdoll
+
+vox/player/swedish_police2.xml : TDMP Models/Swedish Police
+vox/player/swedish_police2_ragdoll.xml : TDMP Models/Swedish Police Ragdoll
+
+vox/player/whiteshirt_tie.xml : TDMP Models/Office worker 1
+vox/player/whiteshirt_tie_ragdoll.xml : TDMP Models/Office worker 1 Ragdoll
+
+vox/player/whiteshirt_tie2.xml : TDMP Models/Office worker 2
+vox/player/whiteshirt_tie2_ragdoll.xml : TDMP Models/Office worker 2 Ragdoll

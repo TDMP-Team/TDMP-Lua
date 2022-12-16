@@ -1,0 +1,6 @@
+<prefab version="1.1.0">
+	<group name="instance=MOD/vox/bomb.xml" pos="0.0 0.1 0.0" rot="0.0 0.0 0.0">
+		<vox tags="unbreakable exp nocull" pos="0.0 0.0 0.1" rot="0.0 0.0 0.0" density="4" file="bomb.vox"></vox>
+	</group>
+</prefab>
+
