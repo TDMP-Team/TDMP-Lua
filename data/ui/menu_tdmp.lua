@@ -2,6 +2,7 @@
 #include "options.lua"
 #include "score.lua"
 #include "promo.lua"
+#include "../tdmp/json.lua"
 
 bgItems = {nil, nil}
 bgCurrent = 0
@@ -21,6 +22,32 @@ gActivations = 0
 
 promo_full_initiated = false
 
+local function startsWith(str, start)
+	return string.sub(str, 1, string.len(start)) == start
+end
+
+downloadingMod = 0
+loadOnModMap = nil
+pendingLevel = {}
+function loadLevel(mod, a)
+	if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then return end
+
+	if mod then
+		local modId = a
+		if startsWith(modId, "steam-") and not HasKey("mods.available."..modId) then
+			Command("mods.subscribe", modId)
+			pendingLevel[#pendingLevel + 1] = modId
+			loadOnModMap = modId
+		else
+			loadOnModMap = nil
+			downloadingMod = 0
+		end
+		Command("mods.play", a)
+	else
+		a = json.decode(a)
+		StartLevel(a[1], a[2], a[3])
+	end
+end
 
 -- Yes-No popup
 yesNoPopup = 
@@ -431,7 +458,13 @@ function drawSandbox(scale)
 			if selected then
 				for i=1, #gSandbox do
 					if selected == gSandbox[i].level then
-						StartLevel(gSandbox[i].id, gSandbox[i].file, gSandbox[i].layers)
+						if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then
+							TDMP_StartLevel(false, gSandbox[i].id, gSandbox[i].file, gSandbox[i].layers)
+						end
+
+						if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+							StartLevel(gSandbox[i].id, gSandbox[i].file, gSandbox[i].layers)
+						end
 					end
 				end
 			end
@@ -1492,7 +1525,15 @@ function drawCreate(scale)
 								UiImageBox("common/box-solid-6.png", 200, 40, 6, 6)
 							UiPop()
 							if UiTextButton("Play", 200, 40) then
-								Command("mods.play", gModSelected)
+								if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then
+									TDMP_StartLevel(true, gModSelected)
+								end
+
+								if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+									Command("mods.play", gModSelected)
+								else
+									UiSound("error.ogg")
+								end
 							end
 						UiPop()
 					else
@@ -2175,6 +2216,47 @@ function draw()
 	end
 	
 	promoDraw()
+
+	if #pendingLevel > 0 then
+		downloadingMod = math.min(downloadingMod + .005, 1)
+	elseif downloadingMod > 0 then
+		downloadingMod = downloadingMod - .005
+	end
+
+	if downloadingMod > 0 then
+		UiPush()
+			UiColor(0,0,0, downloadingMod)
+			UiRect(UiWidth(), UiHeight())
+			
+			UiColor(1,1,1, 1)
+			UiTranslate(UiCenter(), UiMiddle())
+			UiFont("regular.ttf", 32)
+			UiAlign("center middle")
+
+			local l = "Done!"
+			if #pendingLevel > 0 then
+				l = "Downloading " .. #pendingLevel .. " mod(s)"
+				local t = math.mod(GetTime(), 4.0)
+				if t > 1 then l = l.."." end
+				if t > 2 then l = l.."." end
+				if t > 3 then l = l.."." end
+			end
+
+			for i, modId in ipairs(pendingLevel) do
+				if HasKey("mods.available."..modId) then
+					table.remove(pendingLevel, i)
+				end
+			end
+
+			UiText(l)
+		UiPop()
+
+		if #pendingLevel <= 0 and loadOnModMap then
+			Command("mods.play", loadOnModMap)
+
+			loadOnModMap = nil
+		end
+	end
 
 	drawTdmp()
 end

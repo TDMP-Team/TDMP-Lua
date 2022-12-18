@@ -694,13 +694,7 @@ function drawEndScreen(f, state)
 				end
 				if UiTextButton("Main menu", 220, 40) then
 					if TDMP_IsServer() then
-						TDMP_ServerStartEvent("Exit", {
-							Receiver = TDMP.Enums.Receiver.ClientsOnly, -- We've received that event already so we need to broadcast it only to clients, not again to ourself
-							Reliable = true,
-
-							DontPack = true,
-							Data = ""
-						})
+						TDMP_ExitLevel()
 					end
 
 					Menu()
@@ -1241,13 +1235,7 @@ function pauseMenu()
 			else
 				if UiTextButton("Restart", bw, bh) then
 					if TDMP_IsServer() then
-						TDMP_ServerStartEvent("Restart", {
-							Receiver = TDMP.Enums.Receiver.ClientsOnly, -- We've received that event already so we need to broadcast it only to clients, not again to ourself
-							Reliable = true,
-
-							DontPack = true,
-							Data = ""
-						})
+						TDMP_ExitLevel()
 					end
 
 					UiSound("common/click.ogg")
@@ -1266,6 +1254,9 @@ function pauseMenu()
 
 			if UiTextButton("Main menu", 200, bh) then
 				UiSound("common/click.ogg")
+				if TDMP_IsServer() then
+					TDMP_ExitLevel()
+				end
 				Menu()
 			end
 

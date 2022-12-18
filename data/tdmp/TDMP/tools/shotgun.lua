@@ -26,7 +26,7 @@ function InitShotgun()
 		local mediumDamage = math.min(math.max((data[3] - 3) * .5, 0), 1)
 		mediumDamage = ((mediumDamage + mediumDamage) + 3) * .2
 
-		local seed = TDMP_IsServer() and TDMP_FixedTime()*1000 or data[5]
+		local seed = TDMP_IsServer() and TDMP_FixedTime()*1000 or tonumber(data[5])
 		Ballistics:Shoot{
 			Type = Ballistics.Type.Buckshot,
 			Seed = seed, -- Seed is required for shooting buckshot the same way for all clients
@@ -62,7 +62,7 @@ function InitShotgun()
 		if not TDMP_IsServer() then return end
 
 		data[4] = steamid
-		data[5] = seed
+		data[5] = tostring(seed) -- For some reason our json encoder cant really deal with numbers, so for seed it would be more reliable to make it as a string
 		TDMP_ServerStartEvent("ShotgunShot", {
 			Receiver = TDMP.Enums.Receiver.ClientsOnly, -- We've received that event already so we need to broadcast it only to clients, not again to ourself
 			Reliable = true,

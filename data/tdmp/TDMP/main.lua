@@ -21,11 +21,6 @@ Bullets_PlayerDamage = {}
 
 Steps = {}
 
-Hook_AddListener("TestReturn", "123", function(value)
-	DebugPrint("called")
-	return "Testing return: " .. value
-end)
-
 settingsAlpha, tdmpSettingsAlpha = 0, 0
 settingsActive = false
 
@@ -225,14 +220,14 @@ do
 	end)
 
 	TDMP_RegisterEvent("Restart", function(data, steamid)
+		if TDMP_IsServer() then return end
+
 		Restart()
 	end)
 
-	TDMP_RegisterEvent("Exit", function(data, steamid)
-		Menu()
-	end)
-
 	TDMP_RegisterEvent("SpawnGlobal", function(jsonData, steamid)
+		if TDMP_IsServer() then return end
+		
 		local data = json.decode(jsonData)
 
 		local hookName = data[6]
@@ -264,8 +259,6 @@ do
 end
 
 function init()
-	TDMP_Test()
-	
 	materialProperties = {}
 	materialProperties["dirt"] = { sound = LoadSound("dirt/hit-m0.ogg"), strength = 2, hardness = 0.1 }
 	materialProperties["foliage"] = { sound = LoadSound("foliage/hit-m0.ogg"), strength = 2, hardness = 0.1 }

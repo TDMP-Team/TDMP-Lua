@@ -31,12 +31,6 @@ function InitPipebomb()
 		SetBodyTransform(body, data[1])
 		SetBodyVelocity(body, TransformToParentVec(GetBodyTransform(body), vel))
 
-		local seed = TDMP_IsServer() and TDMP_FixedTime() or data[4]
-
-		math.randomseed(seed)
-		SetBodyAngularVelocity(body, Vec(math.random(-10,10), math.random(-10,10), math.random(-10,10)))
-		math.randomseed(TDMP_FixedTime())
-
 		local shape = GetBodyShapes(body)[1]
 		SetTag(shape, "owner", steamid or data[3])
 		SetTag(shape, "bomb", "1.5")
@@ -44,12 +38,13 @@ function InitPipebomb()
 
 		PlaySound(throwBomb[math.random(1, #throwBomb)], data[1].pos)
 
-		local netId = TDMP_RegisterNetworkBody(body, data[5])
+		local netId = TDMP_RegisterNetworkBody(body, data[4])
 
 		if not TDMP_IsServer() then return end
+		SetBodyAngularVelocity(body, Vec(math.random(-10,10), math.random(-10,10), math.random(-10,10)))
+
 		data[3] = steamid
-		data[4] = seed
-		data[5] = netId
+		data[4] = netId
 
 		TDMP_ServerStartEvent("ThrowPipebomb", {
 			Receiver = TDMP.Enums.Receiver.ClientsOnly, -- We've received that event already so we need to broadcast it only to clients, not again to ourself
