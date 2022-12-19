@@ -1235,7 +1235,13 @@ function pauseMenu()
 			else
 				if UiTextButton("Restart", bw, bh) then
 					if TDMP_IsServer() then
-						TDMP_ExitLevel()
+						TDMP_ServerStartEvent("Restart", {
+							Receiver = TDMP.Enums.Receiver.ClientsOnly, -- We've received that event already so we need to broadcast it only to clients, not again to ourself
+							Reliable = true,
+
+							DontPack = true,
+							Data = ""
+						})
 					end
 
 					UiSound("common/click.ogg")

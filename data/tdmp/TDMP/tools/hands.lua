@@ -5,7 +5,7 @@
 TDMP_DefaultTools = TDMP_DefaultTools or {}
 
 function InitHands()
-	RegisterTool("tdmp_hands", "Hands", "vox/invis.vox", 1)
+	RegisterTool("tdmp_hands", "Hands", "vox/tdmp/invis.vox", 1)
 	SetBool("game.tool.tdmp_hands.enabled", true)
 end
 

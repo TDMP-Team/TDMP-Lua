@@ -108,7 +108,7 @@ function TDMP_RaycastPlayer(startPos, direction, raycastLocal, length, ignoreIds
 	if not hit then
 		local plys = TDMP_GetPlayers()
 		for i, pl in ipairs(plys) do
-			if raycastLocal or not TDMP_IsMe(pl.id) and (ignoreIds and not ignoreIds[pl.steamId]) then
+			if raycastLocal or not TDMP_IsMe(pl.id) and (not ignoreIds or not ignoreIds[pl.steamId]) then
 				local pos = TDMP_GetPlayerTransform(pl.id).pos
 				local driving = pl.veh and pl.veh > 0
 

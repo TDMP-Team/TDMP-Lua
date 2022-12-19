@@ -133,7 +133,7 @@ function ToolsTick(dt)
 						SetBodyTransform(ent, TransformToParentTransform(PlayerBodies[ply.steamId].Parts.Torso:GetWorldTransform(), behindBack))
 					end
 
-					DebugCross(GetBodyTransform(ent).pos, 1, 0, 0)
+					-- DebugCross(GetBodyTransform(ent).pos, 1, 0, 0)
 				end
 
 				data.target = trg -- used for player models
@@ -170,7 +170,7 @@ function ToolsPlayerTick(ply)
 			if not TDMP_DefaultTools[ply.heldItem].modded then
 				ToolsBodies[ply.steamId].ents = not ply:IsMe() and Spawn(TDMP_DefaultTools[ply.heldItem].xml, ply:GetToolTransform())
 			else
-				local ents = Hook_Run(ply.heldItem .. "_CreateWorldModel", {TDMP_DefaultTools[ply.heldItem].xml, ply:GetToolTransform()})
+				local ents = not ply:IsMe() and Hook_Run(ply.heldItem .. "_CreateWorldModel", {TDMP_DefaultTools[ply.heldItem].xml, ply:GetToolTransform()})
 
 				if ents then
 					ToolsBodies[ply.steamId].ents = json.decode(ents)

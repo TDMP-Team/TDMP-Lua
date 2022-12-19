@@ -4,7 +4,7 @@ Projectile = Projectile or {}
 Projectile.__index = Projectile
 
 local DamageMult = {
-	Head = 1.2,
+	Head = 1.5,
 	Body = 1,
 	Legs = .5
 }

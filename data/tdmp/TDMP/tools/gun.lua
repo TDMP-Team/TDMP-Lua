@@ -36,7 +36,7 @@ function InitGun()
 			Soft = softDamage,
 			Medium = mediumDamage,
 			Hard = 0,
-			Damage = .40,
+			Damage = .50,
 			NoHole = false,
 			Impulse = .5,
 

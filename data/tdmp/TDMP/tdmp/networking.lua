@@ -90,6 +90,9 @@ function TDMP_Spawn(hookName, xml, transform, allowStatic, jointExisting)
 		elseif type == "vehicle" then
 			local iStr = tostring(i)
 			netIds[iStr] = TDMP_RegisterNetworkVehicle(ent)
+		elseif type == "shape" then
+			local iStr = tostring(i)
+			netIds[iStr] = TDMP_RegisterNetworkShape(ent)
 		end
 	end
 
@@ -119,30 +122,33 @@ function TDMP_ReceiveSpawn(data)
 		elseif type == "vehicle" then
 			local iStr = tostring(i)
 			netIds[iStr] = TDMP_RegisterNetworkVehicle(ent, netIds[iStr])
+		elseif type == "shape" then
+			local iStr = tostring(i)
+			netIds[iStr] = TDMP_RegisterNetworkShape(ent, netIds[iStr])
 		end
 	end
 end
 
-local lastShapeNetworkId = 0
-shapeIdToNetworkId = {}
-networkIdToShape = {}
-function TDMP_RegisterNetworkShape(shape, netId)
-	if not netId then
-		netId = lastShapeNetworkId
+-- local lastShapeNetworkId = 0
+-- shapeIdToNetworkId = {}
+-- networkIdToShape = {}
+-- function TDMP_RegisterNetworkShape(shape, netId)
+-- 	if not netId then
+-- 		netId = lastShapeNetworkId
 
-		lastShapeNetworkId = lastShapeNetworkId + 1
-	end
+-- 		lastShapeNetworkId = lastShapeNetworkId + 1
+-- 	end
 
-	shapeIdToNetworkId[shape] = netId
-	networkIdToShape[netId] = shape
+-- 	shapeIdToNetworkId[shape] = netId
+-- 	networkIdToShape[netId] = shape
 
-	return netId
-end
+-- 	return netId
+-- end
 
-function TDMP_GetShapeNetworkId(shape)
-	return shapeIdToNetworkId[shape]
-end
+-- function TDMP_GetShapeNetworkId(shape)
+-- 	return shapeIdToNetworkId[shape]
+-- end
 
-function TDMP_GetShapeByNetworkId(networkId)
-	return networkIdToShape[networkId]
-end
+-- function TDMP_GetShapeByNetworkId(networkId)
+-- 	return networkIdToShape[networkId]
+-- end
