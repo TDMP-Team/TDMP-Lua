@@ -30,6 +30,10 @@ function Player:GetVehicle()
 	return self.veh
 end
 
+function Player:GetInteractShape()
+	return self.interactShape
+end
+
 function Player:IsDrivingVehicle()
 	return self.veh and self.veh > 0
 end

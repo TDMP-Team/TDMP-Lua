@@ -2,6 +2,7 @@
 -- The elevator continues at given speed until reaching the joint limit or the timer runs out
 
 #include "script/common.lua"
+#include "tdmp/player.lua"
 
 pTimer = GetFloatParam("timer", 15)
 pSpeed = GetFloatParam("speed", 0.1)
@@ -45,7 +46,7 @@ function init()
 end
 
 function press(shape)	
-	PlaySound(clickDown)
+	PlaySound(clickDown, GetShapeWorldTransform(shape).pos, 2)
 	s = GetShapeLocalTransform(shape)
 	d = TransformToParentVec(s, Vec(0,-.05,0))
 	s.pos = VecAdd(s.pos, d)
@@ -55,7 +56,7 @@ end
 
 
 function unpress(shape)
-	PlaySound(clickUp)
+	PlaySound(clickUp, GetShapeWorldTransform(shape).pos, 2)
 	s = GetShapeLocalTransform(shape)
 	d = TransformToParentVec(s, Vec(0,.05,0))
 	s.pos = VecAdd(s.pos, d)
@@ -65,50 +66,49 @@ function unpress(shape)
 	SetJointMotor(motor2, 0.0)
 end
 
-Hook_AddListener("PlayerInteractedWithShape", "ChangeBridgeState", function(jsonData)
-	local data = json.decode(jsonData)
-
-	-- data.started
-	-- data.finished
-	-- data.shapeNetId
-end)
-
 function tick(dt)
 	downTimer = downTimer - dt
 	upTimer = upTimer - dt
 
 	local eps = 1
 
-	if InputPressed("interact") then
-		if GetPlayerInteractShape() == down or GetPlayerInteractShape() == down2 then
-			if downPressed then
-				unpress(down)
-				unpress(down2)
-				downPressed = false
-			else
-				press(down)
-				press(down2)
-				downPressed = true
-				if upPressed then
-					upPressed = false
-					unpress(up)
-					unpress(up2)
-				end
-			end
-		end
-		if GetPlayerInteractShape() == up or GetPlayerInteractShape() == up2 then
-			if upPressed then
-				unpress(up)
-				unpress(up2)
-				upPressed = false
-			else
-				press(up)
-				press(up2)
-				upPressed = true
+	local plys = TDMP_GetPlayers()
+	for i, v in ipairs(plys) do
+		local ply = Player(v.steamId)
+
+		if ply:IsInputPressed("interact") then
+			local shape = ply:GetInteractShape()
+
+			if shape == down or shape == down2 then
 				if downPressed then
-					downPressed = false
 					unpress(down)
 					unpress(down2)
+					downPressed = false
+				else
+					press(down)
+					press(down2)
+					downPressed = true
+					if upPressed then
+						upPressed = false
+						unpress(up)
+						unpress(up2)
+					end
+				end
+			end
+			if shape == up or shape == up2 then
+				if upPressed then
+					unpress(up)
+					unpress(up2)
+					upPressed = false
+				else
+					press(up)
+					press(up2)
+					upPressed = true
+					if downPressed then
+						downPressed = false
+						unpress(down)
+						unpress(down2)
+					end
 				end
 			end
 		end
