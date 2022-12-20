@@ -856,10 +856,13 @@ function listMods(list, w, h, issubscribedlist)
 					UiFont("bold.ttf", 20)
 				end
 
-				if list.items[i].tags:find("Global") and not list.items[i].description:find("TDMP") and not list.items[i].name:find("TDMP") then
+				local supportedByMod = list.items[i].description:lower():find("tdmp support is included") or list.items[i].name:find("TDMP")
+				if list.items[i].tags:find("Global") and not supportedByMod then
 					UiColor(1,.7,.7,1)
-				else
+				elseif not supportedByMod then
 					UiColor(1,1,1,1)
+				else
+					UiColor(.7,1,.7,1)
 				end
 				UiText(list.items[i].name)
 			UiPop()
@@ -1282,16 +1285,16 @@ function drawCreate(scale)
 			UiFont("bold.ttf", 48)
 			UiColor(1,1,1)
 			UiAlign("center")
-			UiTranslate(UiCenter(), 60)
+			UiTranslate(UiCenter(), 50)
 			UiText("MODS")
 		UiPop()
 		
 		UiPush()
 			UiPush()
 				UiFont("regular.ttf", 22)
-				UiTranslate(UiCenter(), 100)
+				UiTranslate(UiCenter(), 80)
 				UiAlign("center")
-				UiWordWrap(600)
+				UiWordWrap(700)
 				UiColor(0.8, 0.8, 0.8)
 				UiText("Create your own mods using Lua scripting and the free voxel modeling program MagicaVoxel. We have provided example mods that you can modify or replace with your own creations. Find out more on our web page:", true)
 				UiTranslate(0, 2)
@@ -1304,6 +1307,10 @@ function drawCreate(scale)
 				UiTranslate(0, 22)
 				UiColor(1, .7, .7)
 				UiText("Mods marked in red do not have TDMP support")
+
+				UiTranslate(0, 22)
+				UiColor(.7, 1, .7)
+				UiText("Mods marked in green have TDMP support") -- and will be automatically downloaded")
 			UiPop()
 
 			UiTranslate(30, 220)
@@ -1467,10 +1474,15 @@ function drawCreate(scale)
 						local timestamp = GetString(modKey..".timestamp")
 
 						local tdmpSupport = false
-						if tags:find("Global") and not description:find("TDMP") and not name:find("TDMP") then
+						local supportedByMod = description:lower():find("tdmp support is included") or name:find("TDMP")
+						if tags:find("Global") and not supportedByMod then
 							UiColor(1,.7,.7,1)
-						else
+						elseif not supportedByMod then
 							UiColor(1,1,1,1)
+
+							tdmpSupport = true
+						else
+							UiColor(.7,1,.7,1)
 
 							tdmpSupport = true
 						end
@@ -1885,14 +1897,6 @@ function drawCreate(scale)
 		end
 	end
 
-	-- yes-no popup
-	if yesNoPopup.show and yesNo() then
-		yesNoPopup.show = false
-		if yesNoPopup.yes and yesNoPopup.yes_fn ~= nil then
-			yesNoPopup.yes_fn()
-		end
-	end
-
 	return open
 end
 
@@ -2041,10 +2045,23 @@ function mainMenu()
 
 			if TDMP_IsLobbyValid() then
 				UiTranslate(0, bo)
-				if UiTextButton(TDMP_IsLobbyOwner(TDMP_LocalSteamID) and "Re-create lobby" or "Leave lobby", bw, bh) then
+				UiColor(1, .5, .5, 1)
+				local isOwner = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
+				if UiTextButton(isOwner and "Re-create lobby" or "Leave lobby", bw, bh) then
 					UiSound("common/click.ogg")
-					TDMP_LeaveLobby()
+
+					yesNoInit("Are you sure that you want to " .. (isOwner and "re-create" or "leave") .. " the lobby?","",function()
+						TDMP_LeaveLobby()
+					end)
 				end
+				UiColor(1,1,1,1)
+			else
+				UiTranslate(0, bo)
+				UiColor(.75, .75, .75, 1)
+				if UiTextButton("Waiting for lobby", bw, bh) then
+					UiSound("error.ogg")
+				end
+				UiColor(1,1,1,1)
 			end
 		UiPop()
 	end
@@ -2146,6 +2163,17 @@ function drawBackground()
 	end
 end
 
+local invite
+function onLobbyInvite(inviter, lobbyId)
+	if invite then return end
+
+	invite = {nick = inviter, die = TDMP_FixedTime() + 5, animation = 0, lobby = lobbyId}
+end
+
+function Remap(value, inMin, inMax, outMin, outMax)
+	return outMin + (((value - inMin) / (inMax - inMin)) * (outMax - outMin))
+end
+
 function drawTdmp()
 	UiPush()
 		UiAlign("bottom left")
@@ -2164,6 +2192,58 @@ function drawTdmp()
 			UiText("Lobby members " .. #members .. "/" .. TDMP_MaxPlayers)
 		end
 	UiPop()
+
+	if invite then
+		local left = invite.die - TDMP_FixedTime()
+		local timeout = left <= 0
+
+		if timeout and invite.canBeDeleted then
+			invite = nil
+		else
+			invite.animation = math.min(1, invite.animation + (timeout and -.05 or .05))
+			if timeout and invite.animation <= 0 then invite.canBeDeleted = true end
+
+			UiPush()
+				local w, h = 400, 95
+
+				UiTranslate(UiCenter()-w/2, UiHeight() - h*invite.animation)
+				UiAlign("top left")
+				UiColor(.0, .0, .0, .75)
+				UiImageBox("ui/common/box-solid-10.png", w, h, 10, 10)
+				UiWindow(w, h)
+				UiTranslate(5, 5)
+
+				UiColor(1,1,1,1)
+				UiFont("bold.ttf", 24)
+				UiText(timeout and (invite.accepted and "Accepted!" or "Ignored!") or "Invite to the lobby")
+				UiTranslate(0, 24)
+
+				UiFont("regular.ttf", 18)
+				UiText(invite.nick .. " has invited you to their lobby")
+
+				UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1)
+				UiTranslate(0, 22)
+				UiFont("regular.ttf", 18)
+				-- UiColor(.2, .6, .2, .75)
+				-- UiImageBox("common/box-solid-6.png", 100, 22, 6, 6)
+				UiFont("regular.ttf", 18)
+				UiColor(1,1,1,1)
+				if UiTextButton("Accept", 100, 24) then
+					TDMP_JoinLobby(invite.lobby)
+					invite.accepted = true
+					invite.die = 0
+				end
+
+				UiTranslate(0, 30)
+
+				UiColor(1,1,1, .25)
+				UiRect(w-10, 5)
+
+				UiColor(1,1,1, 1)
+				UiRect((w-10) * Remap(left, 0, 5, 0, 1), 5)
+			UiPop()
+		end
+	end
 end
 
 local tdmpVersion = TDMP_Version()
@@ -2258,7 +2338,16 @@ function draw()
 		end
 	end
 
-	pcall(drawTdmp) -- dumb walk-around of lua error when something happens in lobby (such as re-creation of lobby or member leave)
+	local s, err = pcall(drawTdmp) -- dumb walk-around of lua error when something happens in lobby (such as re-creation of lobby or member leave)
+	if not s then TDMP_Print(err) end
+
+	-- yes-no popup
+	if yesNoPopup.show and yesNo() then
+		yesNoPopup.show = false
+		if yesNoPopup.yes and yesNoPopup.yes_fn ~= nil then
+			yesNoPopup.yes_fn()
+		end
+	end
 end
 
 
