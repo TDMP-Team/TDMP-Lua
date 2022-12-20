@@ -16,7 +16,9 @@ TDMP.Input = {
 	jump = 6,
 	space = 6,
 	crouch = 7,
-	ctrl = 7
+	ctrl = 7,
+	e = 8,
+	interact = 8
 }
 
 TDMP.InputToString = {
@@ -28,15 +30,8 @@ TDMP.InputToString = {
 	[5] = "d",
 	[6] = "space",
 	[7] = "ctrl",
+	[8] = "interact",
 }
-
--- Not implemented yet
--- function TDMP_AddToolModel(toolId, data)
--- 	Hook_Run("AddToolModel", {
--- 		tool = toolId,
--- 		data = data
--- 	})
--- end
 
 --[[-------------------------------------------------------------------------
 steamId [string]: Who's arms to control?

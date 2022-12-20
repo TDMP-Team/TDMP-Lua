@@ -60,6 +60,24 @@ function Player:IsInputDown(buttonId)
 	return TDMP_IsPlayerInputDown(self.id, buttonId)
 end
 
+function Player:IsInputPressed(buttonId)
+	if type(buttonId) == "string" then
+		if not TDMP.Input[buttonId] then
+			DebugPrint("Unknown input! (" .. tostirng(buttonId) .. ")")
+
+			return false
+		end
+
+		buttonId = TDMP.Input[buttonId]
+	elseif not TDMP.InputToString[buttonId] then
+		DebugPrint("Unknown input! (" .. tostirng(buttonId) .. ")")
+
+		return false
+	end
+
+	return TDMP_IsPlayerInputPressed(self.id, buttonId)
+end
+
 function Player:GetAimDirection(cam)
 	cam = cam or self:GetCamera()
 	local forward = TransformToParentPoint(cam, Vec(0, 0, -1))

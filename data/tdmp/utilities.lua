@@ -16,7 +16,9 @@ TDMP.Input = {
 	jump = 6,
 	space = 6,
 	crouch = 7,
-	ctrl = 7
+	ctrl = 7,
+	e = 8,
+	interact = 8
 }
 
 TDMP.InputToString = {
@@ -28,15 +30,8 @@ TDMP.InputToString = {
 	[5] = "d",
 	[6] = "space",
 	[7] = "ctrl",
+	[8] = "interact",
 }
-
--- Not implemented yet
--- function TDMP_AddToolModel(toolId, data)
--- 	Hook_Run("AddToolModel", {
--- 		tool = toolId,
--- 		data = data
--- 	})
--- end
 
 --[[-------------------------------------------------------------------------
 steamId [string]: Who's arms to control?
@@ -101,14 +96,14 @@ local cacheMin = Vec(-.35, 0, -.35)
 --[[-------------------------------------------------------------------------
 Raycasts players and returning hit player, hit position and distance
 ---------------------------------------------------------------------------]]
-function TDMP_RaycastPlayer(startPos, direction, raycastLocal, length)
+function TDMP_RaycastPlayer(startPos, direction, raycastLocal, length, ignoreIds)
 	length = length or math.huge
 	local hit, dist = QueryRaycast(startPos, direction, length)
 
 	if not hit then
 		local plys = TDMP_GetPlayers()
 		for i, pl in ipairs(plys) do
-			if raycastLocal or not TDMP_IsMe(pl.id) then
+			if raycastLocal or not TDMP_IsMe(pl.id) and (not ignoreIds or not ignoreIds[pl.steamId]) then
 				local pos = TDMP_GetPlayerTransform(pl.id).pos
 				local driving = pl.veh and pl.veh > 0
 
