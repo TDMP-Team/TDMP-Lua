@@ -2258,7 +2258,7 @@ function draw()
 		end
 	end
 
-	drawTdmp()
+	pcall(drawTdmp) -- dumb walk-around of lua error when something happens in lobby (such as re-creation of lobby or member leave)
 end
 
 
