@@ -26,13 +26,11 @@ lights = {}
 TDMP_DefaultTools = TDMP_DefaultTools or {}
 
 Hook_AddListener("AddToolModel", "TDMP_AddToolModel", function(data)
-	TDMP_Print(data)
 	data = json.decode(data)
 
 	data.data.modded = true
 	TDMP_DefaultTools[data.tool] = data.data
 end)
-TDMP_Print("Added tool listener")
 
 function InitTools()
 	InitSledge()

@@ -106,6 +106,8 @@ function RifleTick(dt, cam, dir)
 			scope = not scope
 		end
 		
+		if InputPressed("esc") then scope = false end
+
 		if timerrifle >= .18 then
 			SetValue("riflerotx",0,"easein",.05)
 			SetValue("rifleroty",1,"easein",.05)
@@ -124,16 +126,25 @@ function RifleTick(dt, cam, dir)
 	if timerrifle < 1.5 then
 		timerrifle = timerrifle + dt
 	end
+
+	if not HasKey("savegame.mod.tdmp.sensitivity") then
+		SetInt("savegame.mod.tdmp.sensitivity", GetInt("options.input.sensitivity"))
+	end
 end
 
 function RifleDraw()
 	if GetString("game.player.tool") == "tdmp_rifle" and scope and GetBool("game.player.canusetool") then
 		SetBool("hud.aimdot", false)
-		SetCameraFov(25)
+		SetCameraFov(30)
+
 		UiPush()
-			UiImage("ui/scope.png", 0, 0, UiWidth(), UiHeight() + 14)
+			UiAlign("center")
+			UiTranslate(UiWidth()/2,-5)
+			UiImage("ui/hud/scope.png")
 		UiPop()
 	else
 		scope = false
 	end
+
+	SetBool("tdmp.scoping", scope)
 end

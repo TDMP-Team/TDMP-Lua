@@ -1,5 +1,5 @@
 #include "game.lua"
-#include "options.lua"
+#include "options_tdmp.lua"
 #include "score.lua"
 #include "promo.lua"
 #include "../tdmp/json.lua"

@@ -1,5 +1,5 @@
 #include "game.lua"
-#include "ui/options.lua"
+#include "ui/options_tdmp.lua"
 #include "ui/score.lua"
 #include "ui/map.lua"
 #include "tdmp/networking.lua"
@@ -1646,7 +1646,7 @@ function drawSteroid()
 	UiPop()
 end
 
-
+local reset = false
 function tick()
 	SetBool("game.disablepause", true)
 	if gMissionMode and gMissions[gMissionId].alarmPath then
@@ -1667,6 +1667,15 @@ function tick()
 
 	end
 	gAlarm = GetBool("level.alarm")
+
+	if GetBool("tdmp.scoping") then
+		SetInt("options.input.sensitivity", GetInt("savegame.mod.tdmp.sensitivity")/2)
+		reset = false
+
+	elseif not reset then
+		SetInt("options.input.sensitivity", GetInt("savegame.mod.tdmp.sensitivity"))
+		reset = true
+	end
 end
 
 
