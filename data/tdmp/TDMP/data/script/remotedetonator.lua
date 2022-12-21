@@ -1,3 +1,5 @@
+#include "tdmp/utilities.lua"
+
 pExplosion = GetIntParam("explosion",3)
 
 function init()
@@ -13,7 +15,7 @@ function init()
 end
 
 function tick(dt)
-    if GetPlayerInteractShape() == button and InputPressed("interact") and not detonated then		
+    if TDMP_AnyPlayerInteractWithShape() == button and not detonated then		
         detonated = true
         local t = GetShapeLocalTransform(button)
         t.pos[1] = t.pos[1] - 0.1

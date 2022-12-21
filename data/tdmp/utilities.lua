@@ -1,6 +1,7 @@
 if not TDMP_LocalSteamID then return end
 #include "json.lua"
 #include "hooks.lua"
+#include "player.lua"
 
 TDMP = TDMP or {}
 
@@ -128,4 +129,21 @@ function TDMP_RaycastPlayer(startPos, direction, raycastLocal, length, ignoreIds
 	end
 
 	return false
+end
+
+--[[-------------------------------------------------------------------------
+Returns shape which player interacts with. Mostly used for syncing buttons
+and triggers on the maps
+---------------------------------------------------------------------------]]
+function TDMP_AnyPlayerInteractWithShape()
+	local plys = TDMP_GetPlayers()
+	for i, v in ipairs(plys) do
+		local ply = Player(v.steamId)
+
+		if ply:IsInputPressed("interact") then
+			return ply:GetInteractShape()
+		end
+	end
+
+	return -1
 end

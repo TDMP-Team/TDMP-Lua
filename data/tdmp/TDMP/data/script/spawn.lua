@@ -94,6 +94,11 @@ function init()
 			elseif type == "vehicle" then
 				local iStr = tostring(i)
 				netIds[iStr] = TDMP_RegisterNetworkVehicle(ent, netIds[iStr])
+			
+
+			elseif type == "shape" then
+				local iStr = tostring(i)
+				netIds[iStr] = TDMP_RegisterNetworkShape(ent, netIds[iStr])
 			end
 
 			SetTag(ent, "owner", steamid or data[4])
