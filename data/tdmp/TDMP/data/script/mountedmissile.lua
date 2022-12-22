@@ -1,4 +1,5 @@
 #include "tdmp/player.lua"
+#include "tdmp/ballistics.lua"
 
 function init()
 	body = FindBody("body")
@@ -27,15 +28,27 @@ function init()
 	burst = 8
 	timeBetweenShots = 0.1
 	shootTimer = 0
+	seed = 0
+	startSeed = 0
 
 	missiles = FindShapes("m")
 	missilesReset = true
 end
 
+local dirs = {
+	Vec(-16, 50, 12),
+	Vec(59 -63	-56),
+	Vec(-33, -14, 93),
+	Vec(-71, 72, -94),
+	Vec(-28, 16, -18),
+	Vec(-36, 42, 51),
+	Vec(60, 6, 34)
+}
+
 function tick(dt)
 	local plys = TDMP_GetPlayers()
 
-	local driver
+	local driver = false
 	for i, v in ipairs(plys) do
 		local ply = Player(v)
 		local veh = ply:GetVehicle()
@@ -47,9 +60,8 @@ function tick(dt)
 		end
 	end
 
-	if not driver and not isShooting then
-		return
-	end
+	if not driver and not isShooting then return end
+	if not driver or not driver.GetCamera then return end
 
 	local broken = IsBodyBroken(gun)
 	local health = GetVehicleHealth(vehicle)
@@ -119,7 +131,7 @@ function tick(dt)
 			
 			shootTimer = timeBetweenShots
 
-			PlaySound(shootSnd[math.random(0,#shootSnd)])
+			PlaySound(shootSnd[math.random(0,#shootSnd)], muzzle)
 			
 			SpawnParticle("smoke", muzzle, VecScale(direction,3), 2, 5)
 			ApplyBodyImpulse(body, t.pos, VecScale(direction,-recoil))
@@ -127,6 +139,7 @@ function tick(dt)
 			local launchDir = TransformToParentVec(gt, Vec(0, 0, -1))
 			
 			launchDir = VecAdd(launchDir, rndVec(0.08))
+			seed = seed + 1
 			launchDir[2] = launchDir[2] + 0.1
 			launchDir = VecNormalize(launchDir)
 
@@ -137,7 +150,23 @@ function tick(dt)
 
 			burst = burst - 1
 			
-			Shoot(muzzle, launchDir, 1)
+			-- Shoot(muzzle, launchDir, 1)
+			Ballistics:Shoot{
+				Type = Ballistics.Type.Rocket,
+
+				Owner = driver.steamId,
+				Pos = muzzle,
+				Dir = launchDir,
+				Vel = VecScale(launchDir, 20),
+				Damage = 1,
+				NoHole = false,
+				Explosion = 1.2,
+				Gravity = -2,
+				Impulse = .25,
+
+				HitPlayerAndContinue = false,
+				Life = 0
+			}
 
 			if burst == 0 then
 				isShooting = false
@@ -179,7 +208,8 @@ end
 
 --Return a random vector of desired length
 function rndVec(length)
-	local v = VecNormalize(Vec(math.random(-100,100), math.random(-100,100), math.random(-100,100)))
+	-- math.randomseed(seed)
+	local v = VecNormalize(dirs[seed+1])--VecNormalize(Vec(math.random(-100,100), math.random(-100,100), math.random(-100,100)))
 	return VecScale(v, length)	
 end
 
@@ -208,6 +238,7 @@ function shoot(dt, driver)
 	if driver:IsInputDown("lmb") then
 		if ammo > 0 or GetInt("level.sandbox") == 1 then
 			if not isShooting then
+				seed = startSeed
 				isShooting = true
 				shootTimer = 0				
 				reloadTime = 2

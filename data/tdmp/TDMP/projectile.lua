@@ -63,6 +63,7 @@ function Projectile:OnHit(hitData)
 			if hitData.Player.steamId == TDMP_LocalSteamID then
 				SetPlayerHealth(GetPlayerHealth() - dmg)
 			end
+
 			Hook_Run("TDMP_PlayerDamaged", {
 				Pos = self.Pos, Damage = dmg, Hit = hitData.HitPart, ID = hitData.Player.steamId, Owner = self.Owner
 			})

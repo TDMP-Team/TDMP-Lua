@@ -311,6 +311,7 @@ function PlayerBodiesPlayerTick(ply)
 				local spawned = Spawn(PlayerModels.Paths[body.Model].xmlRag, body.Transform)
 				if #spawned > 0 then
 					local netIds = {}
+					local t = GetTime()
 					for i, ent in ipairs(spawned) do
 						local steamid = GetTagValue(ent, "SteamId")
 
@@ -319,6 +320,7 @@ function PlayerBodiesPlayerTick(ply)
 							netIds[tostring(i)] = TDMP_RegisterNetworkBody(ent)
 						end
 						
+						SetTag(ent, "tdmp_ballisticsIgnore", tostring(t + .5))
 						if steamid == "none" then
 							SetTag(ent, "SteamId", ply.steamId)
 

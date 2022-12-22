@@ -49,14 +49,14 @@ end
 function Player:IsInputDown(buttonId)
 	if type(buttonId) == "string" then
 		if not TDMP.Input[buttonId] then
-			DebugPrint("Unknown input! (" .. tostirng(buttonId) .. ")")
+			DebugPrint("Unknown input! (" .. tostring(buttonId) .. ")")
 
 			return false
 		end
 
 		buttonId = TDMP.Input[buttonId]
 	elseif not TDMP.InputToString[buttonId] then
-		DebugPrint("Unknown input! (" .. tostirng(buttonId) .. ")")
+		DebugPrint("Unknown input! (" .. tostring(buttonId) .. ")")
 
 		return false
 	end
@@ -67,14 +67,14 @@ end
 function Player:IsInputPressed(buttonId)
 	if type(buttonId) == "string" then
 		if not TDMP.Input[buttonId] then
-			DebugPrint("Unknown input! (" .. tostirng(buttonId) .. ")")
+			DebugPrint("Unknown input! (" .. tostring(buttonId) .. ")")
 
 			return false
 		end
 
 		buttonId = TDMP.Input[buttonId]
 	elseif not TDMP.InputToString[buttonId] then
-		DebugPrint("Unknown input! (" .. tostirng(buttonId) .. ")")
+		DebugPrint("Unknown input! (" .. tostring(buttonId) .. ")")
 
 		return false
 	end

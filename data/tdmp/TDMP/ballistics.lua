@@ -232,6 +232,13 @@ function Ballistics:RejectPlayerEntities()
 	for i, shape in ipairs(FindShapes("playerTool", true)) do
 		QueryRejectShape(shape)
 	end
+
+	local t = GetTime()
+	for i, shape in ipairs(FindShapes("tdmp_ballisticsIgnore", true)) do
+		if tonumber(GetTagValue(shape, "tdmp_ballisticsIgnore")) > t then
+			QueryRejectShape(shape)
+		end
+	end
 end
 
 -- https://www.iquilezles.org/www/articles/intersectors/intersectors.htm
@@ -301,31 +308,34 @@ function Ballistics:Hit(startPos, endPos, direction, ignorePlayers, velocity, pr
 
 	for i, player in ipairs(players) do
 		if isSingle and (player.steamId ~= ignorePlayers) or not isSingle and (not ignorePlayers[player.steamId]) then
-			local pos = TDMP_GetPlayerTransform(player.id).pos
-			local newDist = Distance(endPos, pos)
+			local p = Player(player)
+			if not p:IsDead() then
+				local pos = p:GetPos()
+				local newDist = Distance(endPos, pos)
 
-			if newDist < dist then
-				dist = newDist
-				ply = Player(player)
-			end
-
-			if player.steamId == TDMP_LocalSteamID then
-				local theDist = Distance(startPos, pos)
-				local bulletPos = startPos
-				if theDist > newDist then
-					bulletPos = endPos
-					theDist = newDist
+				if newDist < dist then
+					dist = newDist
+					ply = p
 				end
 
-				if not ignoreFlyBy and theDist <= flyByDist and LastFlyBy ~= projectile then
-					if projectile.Type ~= Ballistics.Type.Rocket then
-						PlaySound(Bullets_FlyBy_Sub[math.random(1,#Bullets_FlyBy_Sub)], VecLerp(startPos, endPos, .5), .3)
+				if player.steamId == TDMP_LocalSteamID then
+					local theDist = Distance(startPos, pos)
+					local bulletPos = startPos
+					if theDist > newDist then
+						bulletPos = endPos
+						theDist = newDist
+					end
 
-						Hook_Run("TDMP_BulletFlyBy", {
-							startPos, endPos, projectile.ShootPos, projectile.Owner, projectile.ExtraData
-						})
+					if not ignoreFlyBy and theDist <= flyByDist and LastFlyBy ~= projectile then
+						if projectile.Type ~= Ballistics.Type.Rocket then
+							PlaySound(Bullets_FlyBy_Sub[math.random(1,#Bullets_FlyBy_Sub)], VecLerp(startPos, endPos, .5), .3)
 
-						LastFlyBy = projectile
+							Hook_Run("TDMP_BulletFlyBy", {
+								startPos, endPos, projectile.ShootPos, projectile.Owner, projectile.ExtraData
+							})
+
+							LastFlyBy = projectile
+						end
 					end
 				end
 			end
