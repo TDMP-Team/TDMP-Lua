@@ -1,3 +1,5 @@
+#include "tdmp/player.lua"
+
 function init()
 	body = FindBody("body")
 	vehicle = FindVehicle("car")
@@ -31,9 +33,24 @@ function init()
 end
 
 function tick(dt)
-	if GetPlayerVehicle() ~= vehicle and not isShooting then
+	local plys = TDMP_GetPlayers()
+
+	local driver
+	for i, v in ipairs(plys) do
+		local ply = Player(v)
+		local veh = ply:GetVehicle()
+
+		if veh and veh == vehicle then
+			driver = ply
+
+			break
+		end
+	end
+
+	if not driver and not isShooting then
 		return
 	end
+
 	local broken = IsBodyBroken(gun)
 	local health = GetVehicleHealth(vehicle)
 	if broken or health <= 0 then
@@ -53,7 +70,8 @@ function tick(dt)
 	checkUpright()
 	local health = GetVehicleHealth(vehicle)
 
-	local camPos = GetCameraTransform().pos
+	local cam = driver:GetCamera()
+	local camPos = cam.pos
 	local turretPos = GetBodyTransform(gun).pos
 
 	local dir = VecSub(camPos,turretPos)
@@ -68,7 +86,7 @@ function tick(dt)
 
 	if dist < 2 then
 		-- Direction when inside vehicle		
-		local ct = GetCameraTransform()
+		local ct = cam
 
 		local x = 2 * (ct.rot[1]*ct.rot[3] + ct.rot[4]*ct.rot[2])
 		local y = 2 * (ct.rot[2]*ct.rot[3] - ct.rot[4]*ct.rot[1])
@@ -91,7 +109,7 @@ function tick(dt)
 		nt.pos = VecCopy(gt.pos)
 		nt.rot = QuatSlerp(gt.rot, nt.rot, 0.04)
 		SetBodyTransform(gun, nt)
-		shoot(dt)
+		shoot(dt, driver)
 	end
 
 	if isShooting then
@@ -165,8 +183,7 @@ function rndVec(length)
 	return VecScale(v, length)	
 end
 
-function shoot(dt)
-	do return end
+function shoot(dt, driver)
 	local t = GetBodyTransform(body)
 	local direction = Vec(0,0,1)
 	direction = TransformToParentVec(t, direction)		
@@ -188,7 +205,7 @@ function shoot(dt)
 		end
 	end
 
-	if InputDown("vehicleraise") then
+	if driver:IsInputDown("lmb") then
 		if ammo > 0 or GetInt("level.sandbox") == 1 then
 			if not isShooting then
 				isShooting = true

@@ -81,6 +81,7 @@ local function hsv2rgb(h, s, v)
 	return r, g, b
 end
 
+playersWithFlashlight = {}
 do
 	math.randomseed(TDMP_FixedTime()^2)
 	-- Auto-adding player models to models list
@@ -198,12 +199,14 @@ do
 				</vox>
 				]], Player(steamid):GetCamera())
 				PlaySound(FlashlightOn, ply:GetCamera().pos, 10)
+				playersWithFlashlight[steamid] = true
 			elseif not data[1] and PlayerBodies[steamid].Flashlight then
 				for i, hnd in ipairs(PlayerBodies[steamid].Flashlight) do
 					Delete(hnd)
 				end
 
 				PlayerBodies[steamid].Flashlight = nil
+				playersWithFlashlight[steamid] = nil
 				PlaySound(FlashlightOff, ply:GetCamera().pos, 10)
 			end
 		end

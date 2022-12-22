@@ -470,6 +470,15 @@ function PlayerBodyUpdate(steamid, body, dt, t)
 				plyTr.rot = QuatRotateQuat(t.rot, rotY180)
 			end
 
+			-- happens usually when body was removed
+			if not body.Flashlight and playersWithFlashlight[steamid] and not (veh and veh > 0) then
+				body.Flashlight = Spawn([[
+				<vox file="tdmp/invis.vox" collide="false">
+					<light pos="0.0 0.0 0.0" rot="0.0 0.0 0.0" type="cone" scale="25" angle="70" reach="16"/>
+				</vox>
+				]], cam)
+			end
+
 			if body.Flashlight then
 				if veh and veh > 0 then
 					for i, hnd in ipairs(body.Flashlight) do
