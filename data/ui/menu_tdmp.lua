@@ -2177,8 +2177,8 @@ end
 function drawTdmp()
 	UiPush()
 		UiAlign("bottom left")
-		UiTranslate(1, UiHeight())
-		UiFont("regular.ttf", 18)
+		UiTranslate(3, UiHeight() - 1)
+		UiFont("regular.ttf", 24)
 		UiColor(1, 1, 1, .5)
 
 		if not TDMP_IsLobbyValid() then
@@ -2186,8 +2186,27 @@ function drawTdmp()
 		else
 			local members = TDMP_GetLobbyMembers()
 			for i, member in ipairs(members) do
-				UiText(member.nick .. (member.isOwner and " (Host)" or ""))
-				UiTranslate(1, -18)
+				UiTranslate(0,-36)
+				
+				UiPush()
+					UiAlign("middle left")
+					local pixel = 0
+					for x=1,32 do
+						for y=1,32 do
+							UiColor(member.avatar[pixel+1]/255,member.avatar[pixel+2]/255,member.avatar[pixel+3]/255,1)
+							UiRect(1, 1)
+
+							UiTranslate(1,0)
+							pixel = pixel + 4
+						end
+						UiTranslate(-32,1)
+					end
+					UiTranslate(0,32)
+					UiColor(1, 1, 1, .5)
+
+					UiTranslate(36,-32 - 16)
+					UiText(member.nick .. (member.isOwner and " (Host)" or ""))
+				UiPop()
 			end
 			UiText("Lobby members " .. #members .. "/" .. TDMP_MaxPlayers)
 		end
