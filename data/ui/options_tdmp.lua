@@ -218,6 +218,18 @@ function drawOptions(scale, allowDisplayChanges)
 
 			if optionsTab == "display" then
 				if allowDisplayChanges then
+					UiFont("bold.ttf", 22)
+
+					UiColor(1,.7,.7)
+					UiAlign("center")
+					UiTranslate(0,-lh*1.5)
+					UiText("Please restart the game after changing display settings")
+					UiTranslate(0,lh*1.5)
+					UiColor(1,1,1)
+
+					UiFont("regular.ttf", 22)
+
+					UiAlign("right")
 					UiText("Mode")
 					UiAlign("left")
 					UiTranslate(x1,0)

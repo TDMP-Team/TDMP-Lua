@@ -464,6 +464,8 @@ function drawSandbox(scale)
 
 						if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
 							StartLevel(gSandbox[i].id, gSandbox[i].file, gSandbox[i].layers)
+						else
+							UiSound("error.ogg")
 						end
 					end
 				end
@@ -1530,10 +1532,15 @@ function drawCreate(scale)
 					UiAlign("center middle")	
 				
 					if GetBool(modKey..".playable") then
+						local allowedToPlay = TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists()
 						UiPush()
 							UiTranslate(mw-120,mh-40)
 							UiPush()
-								UiColor(.7, 1, .8, 0.2)
+								if allowedToPlay then
+									UiColor(.7, 1, .8, 0.2)
+								else
+									UiColor(1, .7, .8, 0.2)
+								end
 								UiImageBox("common/box-solid-6.png", 200, 40, 6, 6)
 							UiPop()
 							if UiTextButton("Play", 200, 40) then
@@ -1541,7 +1548,7 @@ function drawCreate(scale)
 									TDMP_StartLevel(true, gModSelected)
 								end
 
-								if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+								if allowedToPlay then
 									Command("mods.play", gModSelected)
 								else
 									UiSound("error.ogg")
@@ -1589,7 +1596,7 @@ function drawCreate(scale)
 							UiPop()
 						end
 					else
-						if gModSelected ~= "" then
+						if gModSelected ~= "" and gModSelected ~= "builtin-tdmp" then
 							UiPush()
 								UiTranslate(mw-120,40)
 								if UiTextButton("Make local copy", 200, 40) then
@@ -1994,9 +2001,15 @@ function mainMenu()
 			UiColorFilter(1,1,1,1/.25)
 			UiTranslate(0, bo)
 
-			if UiTextButton("Sandbox", bw, bh) then
+			local serverExists = TDMP_IsServerExists()
+			if UiTextButton(serverExists and "Join" or "Sandbox", bw, bh) then
 				UiSound("common/click.ogg")
-				SetValue("gSandboxScale", 1, "cosine", 0.25)
+
+				if not serverExists then
+					SetValue("gSandboxScale", 1, "cosine", 0.25)
+				else
+					TDMP_JoinLaunchedGame()
+				end
 			end			
 			UiTranslate(0, bo)
 
@@ -2119,9 +2132,9 @@ end
 function tick()
 	if GetTime() > 0.1 then
 		if gActivations >= 2 then
-			PlayMusic("menu-long.ogg")
+			PlayMusic("tdmp/menu.ogg")
 		else
-			PlayMusic("menu.ogg")
+			PlayMusic("tdmp/menu.ogg")
 		end
 		SetFloat("game.music.volume", (1.0 - 0.8*gCreateScale))
 	end
@@ -2296,7 +2309,7 @@ function draw()
 		UiFont("regular.ttf", 18)
 		UiAlign("right")
 		UiColor(1,1,1,0.5)
-		if UiTextButton(version) then
+		if UiTextButton("Teardown " .. version) then
 			Command("game.openurl", "http://teardowngame.com/changelog/?version="..GetString("game.version"))
 		end
 	UiPop()

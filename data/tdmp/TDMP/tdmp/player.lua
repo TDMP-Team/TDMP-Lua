@@ -144,6 +144,7 @@ setmetatable(Player,
 
 			if not data then return end
 
+			data.steamid = data.steamId
 			return setmetatable(data, Player)
 		end
 	}
