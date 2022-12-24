@@ -12,6 +12,7 @@ PlayerModels = {
 		{author = "SnakeyWakey", name = "Bussinessman", xml = "builtin-tdmp:vox/player/bussiness.xml", xmlRag = "builtin-tdmp:vox/player/bussiness_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/bussiness.png"},
 		{author = "SnakeyWakey", name = "Scientist", xml = "builtin-tdmp:vox/player/scientist.xml", xmlRag = "builtin-tdmp:vox/player/scientist_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/scientist.png"},
 		{author = "SnakeyWakey", name = "Chaos", xml = "builtin-tdmp:vox/player/chaos.xml", xmlRag = "builtin-tdmp:vox/player/chaos_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/chaos.png"},
+
 		{author = "squareblock", name = "Astronaut", xml = "builtin-tdmp:vox/player/astronaut.xml", xmlRag = "builtin-tdmp:vox/player/astronaut_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/Astronaut.png"},
 		{author = "squareblock", name = "Blue shirt guy", xml = "builtin-tdmp:vox/player/bluewhiteshirt.xml", xmlRag = "builtin-tdmp:vox/player/bluewhiteshirt_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/Blue shirt guy.png"},
 		{author = "squareblock", name = "Fancy guy", xml = "builtin-tdmp:vox/player/fancy.xml", xmlRag = "builtin-tdmp:vox/player/fancy_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/Fancy guy.png"},
@@ -23,6 +24,13 @@ PlayerModels = {
 		{author = "squareblock", name = "Office worker 1", xml = "builtin-tdmp:vox/player/whiteshirt_tie.xml", xmlRag = "builtin-tdmp:vox/player/whiteshirt_tie_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/Office worker 1.png"},
 		{author = "squareblock", name = "Office worker 2", xml = "builtin-tdmp:vox/player/whiteshirt_tie2.xml", xmlRag = "builtin-tdmp:vox/player/whiteshirt_tie2_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/Office worker 2.png"},
 		{author = "squareblock", name = "Swedish police", xml = "builtin-tdmp:vox/player/swedish_police2.xml", xmlRag = "builtin-tdmp:vox/player/swedish_police2_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/Swedish police.png"},
+
+		{author = "Nikkil", name = "Omori", xml = "builtin-tdmp:vox/player/omori.xml", xmlRag = "builtin-tdmp:vox/player/omori_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/omori.png"},
+		{author = "Nikkil", name = "Kel", xml = "builtin-tdmp:vox/player/kel.xml", xmlRag = "builtin-tdmp:vox/player/kel_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/kel.png"},
+		{author = "Nikkil", name = "Mari", xml = "builtin-tdmp:vox/player/mari.xml", xmlRag = "builtin-tdmp:vox/player/mari_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/mari.png"},
+		{author = "Nikkil", name = "Hero", xml = "builtin-tdmp:vox/player/hero.xml", xmlRag = "builtin-tdmp:vox/player/hero_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/hero.png"},
+		{author = "Nikkil", name = "Aubrey", xml = "builtin-tdmp:vox/player/aubrey.xml", xmlRag = "builtin-tdmp:vox/player/aubrey_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/aubrey.png"},
+		{author = "Nikkil", name = "Basil", xml = "builtin-tdmp:vox/player/basil.xml", xmlRag = "builtin-tdmp:vox/player/basil_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/basil.png"},
 	},
 
 	Default = "builtin-tdmp:vox/player/human.xml"

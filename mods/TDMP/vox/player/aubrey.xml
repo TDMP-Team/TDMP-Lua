@@ -1,0 +1,79 @@
+<prefab version="1">
+	<group>
+		<group name='Torso' pos='0.0 1.0 0.0' prop0='collide=false'>
+			<body name='Torso' tags='playerBody_torso=1 player SteamId=none' pos='0.05 0.8 0.0' dynamic='true'>
+				<vox pos='-0.05 -0.8 0.0' rot='0.0 0.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='body'/>
+				<group prop0="collide=false">
+					<voxbox name="SKIRT" pos="0.21 -1.0 -0.07" rot="-10.0 167.3 2.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+						<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+							<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+								<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+									<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+										<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 7.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+											<voxbox pos="0.01 0.01 -0.06" rot="6.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+												<voxbox pos="0.01 0.01 -0.06" rot="7.0 5.8 2.0" size="1 3 1" material="wood" color="0.4 0.8 0.8"/>
+												<voxbox pos="0.03 0.02 -0.12" rot="7.0 5.8 2.0" size="1 3 1" material="wood" color="0.4 0.8 0.8"/>
+											</voxbox>
+										</voxbox>
+									</voxbox>
+								</voxbox>
+							</voxbox>
+						</voxbox>
+						<voxbox pos="0.389 0.027 -0.23" rot="-20.0 -179.40001 3.9" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+							<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+								<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+									<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+										<voxbox pos="0.08 0.0 0.0" rot="0.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+											<voxbox pos="0.09 0.0 0.0" rot="0.0 6.0 7.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+												<voxbox pos="0.01 0.01 -0.06" rot="6.0 6.0 0.0" size="1 3 1" material="wood" color="0.4 0.8 0.8">
+													<voxbox pos="0.01 0.01 -0.06" rot="7.0 5.8 2.0" size="1 3 1" material="wood" color="0.4 0.8 0.8"/>
+													<voxbox pos="0.03 0.02 -0.12" rot="7.0 5.8 2.0" size="1 3 1" material="wood" color="0.4 0.8 0.8"/>
+												</voxbox>
+											</voxbox>
+										</voxbox>
+									</voxbox>
+								</voxbox>
+							</voxbox>
+						</voxbox>
+					</voxbox>
+				</group>
+			</body>
+		</group>
+		<group name='Legs' pos='0.1 0.2 0.0' prop0='collide=false'>
+			<body name='Right Leg Top' tags='playerBody_right_leg_top=1 player SteamId=none' pos='-0.2 0.9 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='0.0 -0.4 0.0' rot='0.0 -180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='Leg_R'/>
+			</body>
+			<body name='Right Leg Bottom' tags='playerBody_right_leg_bot=1 player SteamId=none' pos='-0.2 0.5 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='0.0 -0.5 -0.1' rot='0.0 180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='foot_R'/>
+			</body>
+			<body name='Left Leg Top' tags='playerBody_left_leg_top=1 player SteamId=none' pos='0.1 0.9 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='0.0 -0.4 0.0' rot='0.0 180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='Leg_L'/>
+			</body>
+			<body name='Left Leg Bottom' tags='playerBody_left_leg_bot=1 player SteamId=none' pos='0.1 0.5 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='0.0 -0.5 -0.1' rot='0.0 -180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='foot_L'/>
+			</body>
+		</group>
+		<group name='Head' pos='0.0 1.7 0.0' prop0='collide=false'>
+			<body name='Head' tags='playerBody_head=1 player SteamId=none' pos='0.05 0.1 -0.05' rot='0.0 -180.0 0.0' dynamic='true'>
+				<vox pos='0.05 -0.1 -0.0' rot='0.0 -180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='head_3'/>
+				<vox pos='0.05 -0.1 -0.1' rot='0.0 -180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='jaw'/>
+				<voxbox tags='player nocull' pos='0.05 0.0 -0.2' size='1 1 1' color='0.0 0.0 0.0'/>
+				<voxbox tags='player nocull' pos='-0.15 0.0 -0.2' size='1 1 1' color='0.0 0.0 0.0'/>
+			</body>
+		</group>
+		<group name='Arms' pos='0.1 0.9 0.0' prop0='collide=false'>
+			<body name='Right Arm Top' tags='playerBody_right_arm_top=1 player SteamId=none' pos='-0.4 0.7 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='0.0 -0.3 0.0' rot='0.0 180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='Uarm_R'/>
+			</body>
+			<body name='Right Arm Bottom' tags='playerBody_right_arm_bot=1 player SteamId=none' pos='-0.4 0.4 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='0.0 -0.4 0.0' rot='0.0 180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='larm_R'/>
+			</body>
+			<body name='Left Arm Top' tags='playerBody_left_arm_top=1 player SteamId=none' pos='0.3 0.7 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='-0.0 -0.3 0.0' rot='0.0 180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='Uarm_L'/>
+			</body>
+			<body name='Left Arm Bottom' tags='playerBody_left_arm_bot=1 player SteamId=none' pos='0.3 0.4 0.0' rot='0.0 180.0 0.0' dynamic='true'>
+				<vox pos='-0.0 -0.4 0.0' rot='0.0 180.0 0.0' file='MOD/vox/player/aubrey.vox' tags='player nocull' object='larm_L'/>
+			</body>
+		</group>
+	</group>
+</prefab>

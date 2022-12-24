@@ -42,3 +42,21 @@ vox/player/whiteshirt_tie_ragdoll.xml : TDMP Models/Office worker 1 Ragdoll
 
 vox/player/whiteshirt_tie2.xml : TDMP Models/Office worker 2
 vox/player/whiteshirt_tie2_ragdoll.xml : TDMP Models/Office worker 2 Ragdoll
+
+vox/player/omori.xml : TDMP Models/Omori
+vox/player/omori_ragdoll.xml : TDMP Models/Omori Ragdoll
+
+vox/player/aubrey.xml : TDMP Models/Aubrey
+vox/player/aubrey_ragdoll.xml : TDMP Models/Aubrey Ragdoll
+
+vox/player/hero.xml : TDMP Models/Hero
+vox/player/hero_ragdoll.xml : TDMP Models/Hero Ragdoll
+
+vox/player/kel.xml : TDMP Models/Kel
+vox/player/kel_ragdoll.xml : TDMP Models/Kel Ragdoll
+
+vox/player/basil.xml : TDMP Models/Basil
+vox/player/basil_ragdoll.xml : TDMP Models/Basil Ragdoll
+
+vox/player/mari.xml : TDMP Models/Mari
+vox/player/mari_ragdoll.xml : TDMP Models/Mari Ragdoll
