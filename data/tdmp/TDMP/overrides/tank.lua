@@ -21,7 +21,7 @@ function initTank()
 		local muzzle = Vec(0, 1.2, 0)
 		muzzle = VecAdd(muzzle, VecAdd(t.pos, VecScale(direction, 4.9)))
 
-		PlaySound(tankShootSnd[math.random(0,#tankShootSnd)])
+		PlaySound(tankShootSnd[math.random(0,#tankShootSnd)], muzzle, 3)
 
 		SpawnParticle("smoke", muzzle, VecScale(direction, 3), 2, 5)
 
