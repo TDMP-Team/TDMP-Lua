@@ -2329,10 +2329,11 @@ function draw()
 	
 	promoDraw()
 
+	local dt = GetTimeStep()*5
 	if #pendingLevel > 0 then
-		downloadingMod = math.min(downloadingMod + .005, 1)
+		downloadingMod = math.min(downloadingMod + dt, 1)
 	elseif downloadingMod > 0 then
-		downloadingMod = downloadingMod - .005
+		downloadingMod = downloadingMod - dt
 	end
 
 	if downloadingMod > 0 then
@@ -2340,7 +2341,7 @@ function draw()
 			UiColor(0,0,0, downloadingMod)
 			UiRect(UiWidth(), UiHeight())
 			
-			UiColor(1,1,1, 1)
+			UiColor(1,1,1, downloadingMod)
 			UiTranslate(UiCenter(), UiMiddle())
 			UiFont("regular.ttf", 32)
 			UiAlign("center middle")
