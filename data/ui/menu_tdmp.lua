@@ -858,7 +858,7 @@ function listMods(list, w, h, issubscribedlist)
 					UiFont("bold.ttf", 20)
 				end
 
-				local supportedByMod = list.items[i].description:lower():find("tdmp support is included") or list.items[i].name:find("TDMP")
+				local supportedByMod = list.items[i].description:lower():find("tdmp support is included") or list.items[i].name:find("[TDMP]") or list.items[i].name == "TDMP"
 				if list.items[i].tags:find("Global") and not supportedByMod then
 					UiColor(1,.7,.7,1)
 				elseif not supportedByMod then
@@ -1476,7 +1476,7 @@ function drawCreate(scale)
 						local timestamp = GetString(modKey..".timestamp")
 
 						local tdmpSupport = false
-						local supportedByMod = description:lower():find("tdmp support is included") or name:find("TDMP")
+						local supportedByMod = description:lower():find("tdmp support is included") or name:find("[TDMP]") or name == "TDMP"
 						if tags:find("Global") and not supportedByMod then
 							UiColor(1,.7,.7,1)
 						elseif not supportedByMod then
