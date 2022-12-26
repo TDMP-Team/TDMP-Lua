@@ -63,7 +63,7 @@ function TurboTick(dt, cam, dir)
 		local toolt = Transform(Vec(turbox, turboy, turboz))
 		SetToolTransform(toolt)
 
-		if InputPressed("lmb") and GetBool("game.player.canusetool") then
+		if InputPressed("usetool") and GetBool("game.player.canusetool") then
 			timerturbo = 0
 
 			local cast, dist, normal, shape = QueryRaycast(cam.pos, dir, 20)

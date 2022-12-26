@@ -34,7 +34,7 @@ function CableTick(dt, cam, dir)
 		if not HasTag(shape, "player") then
 			local hitpoint = TransformToParentPoint(cam,Vec(0,0,-dist))
 		
-			if InputPressed("lmb") and GetBool("game.player.canusetool") and cast and not placing then
+			if InputPressed("usetool") and GetBool("game.player.canusetool") and cast and not placing then
 				cablepos1 = hitpoint
 				shape1 = shape
 				placing = true
@@ -56,7 +56,7 @@ function CableTick(dt, cam, dir)
 					DrawLine(cablepos1, pos, 1, 6-dist, 0)
 				end
 				
-				if InputReleased("lmb") then
+				if InputReleased("usetool") then
 					if cast then
 						cablepos2 = hitpoint
 						shape2 = shape

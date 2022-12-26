@@ -102,11 +102,12 @@ function RifleTick(dt, cam, dir)
 			timerrifle = 0
 		end
 
+		-- Im not sure how we can fix this input string?
 		if InputPressed("rmb") and GetBool("game.player.canusetool") then
 			scope = not scope
 		end
 		
-		if InputPressed("esc") then scope = false end
+		if InputPressed("pause") then scope = false end
 
 		if timerrifle >= .18 then
 			SetValue("riflerotx",0,"easein",.05)

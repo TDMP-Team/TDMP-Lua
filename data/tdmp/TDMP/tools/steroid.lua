@@ -41,7 +41,7 @@ end
 
 function SteroidTick(dt, cam, dir)
 	if GetString("game.player.tool") == "steroid" then
-		if InputPressed("lmb") and GetBool("game.player.canusetool") and timersteroid >= .5 then
+		if InputPressed("usetool") and GetBool("game.player.canusetool") and timersteroid >= .5 then
 			TDMP_ClientStartEvent("UseSteroid", {
 				Reliable = true,
 

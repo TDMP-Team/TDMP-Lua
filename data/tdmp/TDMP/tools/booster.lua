@@ -157,7 +157,7 @@ function BoosterTick(dt, cam, dir)
 		local toolt = Transform(Vec(boosterx, boostery, boosterz))
 		SetToolTransform(toolt)
 
-		if InputPressed("lmb") and GetBool("game.player.canusetool") then
+		if InputPressed("usetool") and GetBool("game.player.canusetool") then
 			timerbooster = 0
 
 			local cast, dist, normal, shape = QueryRaycast(cam.pos, dir, 20)

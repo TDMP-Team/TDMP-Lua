@@ -86,7 +86,7 @@ function PlankTick(dt, cam, dir)
 		SetToolTransform(Transform(Vec(px, py, pz), QuatEuler(pxr, pyr, pzr)))
 		
 		if not HasTag(shape, "player") then
-			if InputPressed("lmb") and GetBool("game.player.canusetool") and cast and not placing then
+			if InputPressed("usetool") and GetBool("game.player.canusetool") and cast and not placing then
 				plankpos1 = hitpoint
 				shape1 = shape
 				placing = true
@@ -131,7 +131,7 @@ function PlankTick(dt, cam, dir)
 				DrawLine(left2, right2, 1, 1, 1)
 			end
 			
-			if InputReleased("lmb") then
+			if InputReleased("usetool") then
 				plankpos2 = hitpoint
 				shape2 = shape
 				dist = VecLength(VecSub(plankpos1, plankpos2))
