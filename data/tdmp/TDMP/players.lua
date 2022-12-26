@@ -404,11 +404,13 @@ function PlayerBodiesPlayerTick(ply)
 				end
 			end
 
-			for k, v in pairs((PlayerBodies[steamid] or {}).Parts) do
-				Delete(v.hnd)
+			if (PlayerBodies[steamid] and PlayerBodies[steamid].Parts) then
+				for k, v in pairs(PlayerBodies[steamid].Parts) do
+					Delete(v.hnd)
+				end
 			end
 
-			if (PlayerBodies[steamid] or {}).Flashlight then
+			if (PlayerBodies[steamid] and PlayerBodies[steamid].Flashlight) then
 				for i, v in ipairs(PlayerBodies[steamid].Flashlight) do
 					Delete(v)
 				end
