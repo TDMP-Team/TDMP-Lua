@@ -506,7 +506,7 @@ function draw()
 		Ballistics:RejectPlayerEntities()
 		local ply = TDMP_RaycastPlayer(cam.pos, dir, false, 3)
 
-		if ply then
+		if ply and Player(ply):IsVisible() then
 			UiPush()
 				UiAlign("center middle")
 				UiTranslate(UiCenter(), UiMiddle() + 18)

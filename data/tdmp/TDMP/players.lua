@@ -290,32 +290,52 @@ end)
 
 local died = {}
 function PlayerBodiesPlayerTick(ply)
-	if not ply:IsMe() and not PlayerBodies[ply.steamId] then
-		PlayerBody(ply.steamId, (PlayerModels.Selected[ply.steamId] or PlayerModels.Default) or PlayerModels.Default)
+	if not ply:IsVisible() then
+		if PlayerBodies[ply:SteamID()] then
+			if PlayerBodies[ply:SteamID()].Parts then
+				for k, v in pairs(PlayerBodies[ply:SteamID()].Parts) do
+					Delete(v.hnd)
+				end
+			end
+
+			if PlayerBodies[ply:SteamID()].Flashlight then
+				for i, v in ipairs(PlayerBodies[ply:SteamID()].Flashlight) do
+					Delete(v)
+				end
+			end
+
+			PlayerBodies[ply:SteamID()] = nil
+		end
+
+		return
 	end
 
-	if ply:IsDead() and not died[ply.steamId] then
-		died[ply.steamId] = true
+	if not ply:IsMe() and not PlayerBodies[ply:SteamID()] then
+		PlayerBody(ply:SteamID(), (PlayerModels.Selected[ply:SteamID()] or PlayerModels.Default) or PlayerModels.Default)
+	end
+
+	if ply:IsDead() and not died[ply:SteamID()] then
+		died[ply:SteamID()] = true
 
 		if not GetBool("savegame.mod.tdmp.disabledeathsound") or GetBool("tdmp.forcedisabledeathsound") then
 			PlaySound(PlayerDeathSound, ply:GetPos())
 		end
 
-		Hook_Run("PlayerDied", {ply.steamId, ply.id})
+		Hook_Run("PlayerDied", {ply:SteamID(), ply.id})
 
 		if TDMP_IsServer() then
-			local steamid = ply.steamId
+			local steamid = ply:SteamID()
 
 			if (not ply.veh or ply.veh == 0) and not GetBool("savegame.mod.tdmp.disablecorpse") and not GetBool("tdmp.forcedisablecorpse") then
-				if not PlayerBodies[ply.steamId] then
-					PlayerBody(ply.steamId, PlayerModels.Selected[ply.steamId] or 1, true)
+				if not PlayerBodies[ply:SteamID()] then
+					PlayerBody(ply:SteamID(), PlayerModels.Selected[ply:SteamID()] or 1, true)
 
 					for i=1,10 do
-						PlayerBodyUpdate(ply.steamId, PlayerBodies[ply.steamId], 1, GetTime())
+						PlayerBodyUpdate(ply:SteamID(), PlayerBodies[ply:SteamID()], 1, GetTime())
 					end
 				end
 
-				local body = PlayerBodies[ply.steamId]
+				local body = PlayerBodies[ply:SteamID()]
 
 				local spawned = Spawn(PlayerModels.Paths[body.Model].xmlRag, body.Transform)
 				if #spawned > 0 then
@@ -331,7 +351,7 @@ function PlayerBodiesPlayerTick(ply)
 						
 						SetTag(ent, "tdmp_ballisticsIgnore", tostring(t + .5))
 						if steamid == "none" then
-							SetTag(ent, "SteamId", ply.steamId)
+							SetTag(ent, "SteamId", ply:SteamID())
 
 							if GetTagValue(ent, "playerBody_torso") ~= "" then
 								SetBodyTransform(ent, body.Parts.Torso:GetWorldTransform())
@@ -396,7 +416,7 @@ function PlayerBodiesPlayerTick(ply)
 						Reliable = true,
 
 						DontPack = false,
-						Data = {body.Transform, ply.steamId, body.Model, netIds}
+						Data = {body.Transform, ply:SteamID(), body.Model, netIds}
 					})
 
 					Hook_Run("PlayerCorpseCreated", {steamid, spawned})
@@ -417,24 +437,24 @@ function PlayerBodiesPlayerTick(ply)
 				end
 			end
 
-			PlayerBodies[ply.steamId] = nil
+			PlayerBodies[ply:SteamID()] = nil
 
-		elseif PlayerBodies[ply.steamId] then
-			for k, v in pairs(PlayerBodies[ply.steamId].Parts) do
+		elseif PlayerBodies[ply:SteamID()] then
+			for k, v in pairs(PlayerBodies[ply:SteamID()].Parts) do
 				Delete(v.hnd)
 			end
 
-			if PlayerBodies[ply.steamId].Flashlight then
-				for i, v in ipairs(PlayerBodies[ply.steamId].Flashlight) do
+			if PlayerBodies[ply:SteamID()].Flashlight then
+				for i, v in ipairs(PlayerBodies[ply:SteamID()].Flashlight) do
 					Delete(v)
 				end
 			end
 
-			PlayerBodies[ply.steamId] = nil
+			PlayerBodies[ply:SteamID()] = nil
 
 		end
 	elseif not ply:IsDead() then
-		died[ply.steamId] = nil
+		died[ply:SteamID()] = nil
 	end
 end
 
@@ -569,7 +589,7 @@ function PlayerBodyUpdate(steamid, body, dt, t)
 				-- 	body.ForceDisableLeftArm = nil
 				-- end
 
-				local target = (body.ForceRightArmTarget and body.ForceRightArmTarget.pos) or ply.grabbed and GetBodyTransform(ply.grabbed).pos or ToolsBodies[ply.steamId] and ToolsBodies[ply.steamId].target or ply:GetToolTransform().pos
+				local target = (body.ForceRightArmTarget and body.ForceRightArmTarget.pos) or ply.grabbed and GetBodyTransform(ply.grabbed).pos or ToolsBodies[steamid] and ToolsBodies[steamid].target or ply:GetToolTransform().pos
 
 				local up = TransformToParentVec(plyTr, up)
 				local forward = TransformToParentVec(plyTr, forward)
@@ -578,7 +598,7 @@ function PlayerBodyUpdate(steamid, body, dt, t)
 					local forearmTr = body.Parts.ArmTopR:GetWorldTransform()
 					local elbowTr = body.Parts.ArmBottomR:GetWorldTransform()
 
-					local biasPos = TransformToParentTransform(body.Transform, body.ForceRightArmTarget and body.ForceRightArmTarget.bias or ToolsBodies[ply.steamId] and ToolsBodies[ply.steamId].rightBias or body.RightArmBias).pos
+					local biasPos = TransformToParentTransform(body.Transform, body.ForceRightArmTarget and body.ForceRightArmTarget.bias or ToolsBodies[steamid] and ToolsBodies[steamid].rightBias or body.RightArmBias).pos
 
 					IKFollow(forearmTr, elbowTr, target, biasPos, up)
 
@@ -591,9 +611,9 @@ function PlayerBodyUpdate(steamid, body, dt, t)
 
 				local oldTarget = target
 				-- If current tool isn't two-handed then make other hand target to hips
-				if body.ForceDisableLeftArm or (not ply.grabbed and ToolsBodies[ply.steamId] and not ToolsBodies[ply.steamId].twoHands) then
+				if body.ForceDisableLeftArm or (not ply.grabbed and ToolsBodies[steamid] and not ToolsBodies[steamid].twoHands) then
 					target = TransformToParentTransform(body.Transform, Transform(Vec(.35, 0, .2))).pos
-					ToolsBodies[ply.steamId].leftBias = nil
+					ToolsBodies[steamid].leftBias = nil
 				end
 
 				if body.ForceLeftArmTarget then
@@ -605,7 +625,7 @@ function PlayerBodyUpdate(steamid, body, dt, t)
 					local forearmTr = body.Parts.ArmTopL:GetWorldTransform()
 					local elbowTr = body.Parts.ArmBottomL:GetWorldTransform()
 
-					local biasPos = TransformToParentTransform(body.Transform, body.ForceLeftArmTarget and body.ForceLeftArmTarget.bias or ToolsBodies[ply.steamId] and ToolsBodies[ply.steamId].leftBias or body.LeftArmBias).pos
+					local biasPos = TransformToParentTransform(body.Transform, body.ForceLeftArmTarget and body.ForceLeftArmTarget.bias or ToolsBodies[steamid] and ToolsBodies[steamid].leftBias or body.LeftArmBias).pos
 
 					IKFollow(forearmTr, elbowTr, target, biasPos, up)
 

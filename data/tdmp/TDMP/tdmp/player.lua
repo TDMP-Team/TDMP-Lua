@@ -46,6 +46,14 @@ function Player:GetToolTransform()
 	return TDMP_GetPlayerToolTransform(self.id)
 end
 
+function Player:SetVisible(state)
+	SetBool("tdmp." .. self:SteamID() .. ".notvisible", not state)
+end
+
+function Player:IsVisible()
+	return not GetBool("tdmp." .. self:SteamID() .. ".notvisible")
+end
+
 function Player:IsInputDown(buttonId)
 	if type(buttonId) == "string" then
 		if not TDMP.Input[buttonId] then
