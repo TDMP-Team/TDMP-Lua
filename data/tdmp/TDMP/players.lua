@@ -26,6 +26,7 @@ PlayerModels = {
 		{author = "squareblock", name = "Swedish police", xml = "builtin-tdmp:vox/player/swedish_police2.xml", xmlRag = "builtin-tdmp:vox/player/swedish_police2_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/Swedish police.png"},
 
 		{author = "Nikkil", name = "Omori", xml = "builtin-tdmp:vox/player/omori.xml", xmlRag = "builtin-tdmp:vox/player/omori_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/omori.png"},
+		{author = "Nikkil", name = "Sunny", xml = "builtin-tdmp:vox/player/sunny.xml", xmlRag = "builtin-tdmp:vox/player/sunny_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/sunny.png"},
 		{author = "Nikkil", name = "Kel", xml = "builtin-tdmp:vox/player/kel.xml", xmlRag = "builtin-tdmp:vox/player/kel_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/kel.png"},
 		{author = "Nikkil", name = "Mari", xml = "builtin-tdmp:vox/player/mari.xml", xmlRag = "builtin-tdmp:vox/player/mari_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/mari.png"},
 		{author = "Nikkil", name = "Hero", xml = "builtin-tdmp:vox/player/hero.xml", xmlRag = "builtin-tdmp:vox/player/hero_ragdoll.xml", img = "tdmp/TDMP/vox/player/images/hero.png"},
@@ -471,7 +472,9 @@ function PlayerBodyUpdate(steamid, body, dt, t)
 			plyTr.rot = cam.rot
 			local x, y, z = GetQuatEuler(plyTr.rot)
 
-			body.Parts.Head.localTransform.rot = QuatEuler(clamp(x, -30, 60),180,0)
+			local camLocal = TransformToLocalTransform(body.Transform, cam)
+			local _, camY = GetQuatEuler(camLocal.rot)
+			body.Parts.Head.localTransform.rot = QuatEuler(clamp(x, -30, 60), veh and veh > 0 and (camY < 0 and clamp(camY, -180, -70) or clamp(camY, 70, 180)) or 180, 0)
 
 			plyTr.rot = QuatSlerp(body.Transform.rot, QuatEuler(0, y + 180, 0), body.FirstTick and 1 or .5)
 

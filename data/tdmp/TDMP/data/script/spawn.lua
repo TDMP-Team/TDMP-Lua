@@ -77,28 +77,31 @@ function init()
 		local netIds = data[3] or {}
 		for i, ent in ipairs(ents) do
 			local type = GetEntityType(ent)
-			if type == "body" then
-				local iStr = tostring(i)
-				netIds[iStr] = TDMP_RegisterNetworkBody(ent, netIds[iStr])
 
-				if spawnOffset[i] then
-					local wt = TransformToParentTransform(data[1], spawnOffset[i])
-					local q = 1
-					local bt = GetBodyTransform(ent)
-					local it = Transform(VecLerp(bt.pos, wt.pos, q), QuatSlerp(bt.rot, wt.rot, q))
-					SetBodyTransform(ent, it)
-					SetBodyVelocity(ent, Vec(0,0,0))
-					SetBodyAngularVelocity(ent, Vec(0,0,0))
+			if not HasTag(ent, "tdmpIgnore") then
+				if type == "body" then
+					local iStr = tostring(i)
+					netIds[iStr] = TDMP_RegisterNetworkBody(ent, netIds[iStr])
+
+					if spawnOffset[i] then
+						local wt = TransformToParentTransform(data[1], spawnOffset[i])
+						local q = 1
+						local bt = GetBodyTransform(ent)
+						local it = Transform(VecLerp(bt.pos, wt.pos, q), QuatSlerp(bt.rot, wt.rot, q))
+						SetBodyTransform(ent, it)
+						SetBodyVelocity(ent, Vec(0,0,0))
+						SetBodyAngularVelocity(ent, Vec(0,0,0))
+					end
+
+				elseif type == "vehicle" then
+					local iStr = tostring(i)
+					netIds[iStr] = TDMP_RegisterNetworkVehicle(ent, netIds[iStr])
+				
+
+				elseif type == "shape" then
+					local iStr = tostring(i)
+					netIds[iStr] = TDMP_RegisterNetworkShape(ent, netIds[iStr])
 				end
-
-			elseif type == "vehicle" then
-				local iStr = tostring(i)
-				netIds[iStr] = TDMP_RegisterNetworkVehicle(ent, netIds[iStr])
-			
-
-			elseif type == "shape" then
-				local iStr = tostring(i)
-				netIds[iStr] = TDMP_RegisterNetworkShape(ent, netIds[iStr])
 			end
 
 			SetTag(ent, "owner", steamid or data[4])

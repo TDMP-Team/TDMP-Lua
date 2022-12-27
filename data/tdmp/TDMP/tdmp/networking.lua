@@ -83,16 +83,18 @@ function TDMP_Spawn(hookName, xml, transform, allowStatic, jointExisting)
 	local ents = Spawn(xml, transform, allowStatic, jointExisting)
 	local netIds = {}
 	for i, ent in ipairs(ents) do
-		local type = GetEntityType(ent)
-		if type == "body" then
-			local iStr = tostring(i)
-			netIds[iStr] = TDMP_RegisterNetworkBody(ent)
-		elseif type == "vehicle" then
-			local iStr = tostring(i)
-			netIds[iStr] = TDMP_RegisterNetworkVehicle(ent)
-		elseif type == "shape" then
-			local iStr = tostring(i)
-			netIds[iStr] = TDMP_RegisterNetworkShape(ent)
+		if not HasTag(ent, "tdmpIgnore") then
+			local type = GetEntityType(ent)
+			if type == "body" then
+				local iStr = tostring(i)
+				netIds[iStr] = TDMP_RegisterNetworkBody(ent)
+			elseif type == "vehicle" then
+				local iStr = tostring(i)
+				netIds[iStr] = TDMP_RegisterNetworkVehicle(ent)
+			elseif type == "shape" then
+				local iStr = tostring(i)
+				netIds[iStr] = TDMP_RegisterNetworkShape(ent)
+			end
 		end
 	end
 
