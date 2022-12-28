@@ -29,6 +29,8 @@ end
 downloadingMod = 0
 loadOnModMap = nil
 pendingLevel = {}
+
+
 function loadLevel(mod, a)
 	if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then return end
 
@@ -167,26 +169,6 @@ function initSlideShowLevel(level)
 	end
 end
 
-function initSlideShowPromo()
-	local groups = ListKeys("promo.groups")
-	for i=1, #groups do
-		local groupKey = "promo.groups."..groups[i]
-		local items = ListKeys(groupKey.. ".items")
-		for j=1, #items do
-			local img = GetString(groupKey..".items."..items[j]..".full_image")
-			if img ~= "" then
-				local item = {}
-				item.image = img
-				item.promo = groupKey..".items."..items[j]
-				slideshowImages[#slideshowImages+1] = item
-				promoInitFull(item.promo)
-			end
-		end
-	end
-
-	bgPromoIndex[0] = #slideshowImages-1
-	bgPromoIndex[1] = 1
-end
 
 function initSlideshow()
 	slideshowImages = {}
@@ -322,7 +304,7 @@ function isLevelUnlocked(level)
 end
 
 
-function selectLevel() -- edited for TDMP
+function tdmpMapSelector() -- edited for TDMP
 
 	local list, w, h, issubscribedlist = tdmpMapList , 400-10-10-14, 645-20-30, false
 
@@ -424,42 +406,9 @@ function selectLevel() -- edited for TDMP
 						end
 					end
 				end
-				-- if mouseOver and UiIsMouseInRect(228, 75) and InputPressed("rmb") then
-				-- 	-- ret = id
-				-- 	-- rmb_sel = id;
-				-- 	rmb_pushed = true
-				-- end
 				UiRect(w-10-10, 75)
 			UiPop()
 
-			-- if list.items[i].override then
-			-- 	UiPush()
-			-- 	UiTranslate(-10, -18)
-			-- 	if UiIsMouseInRect(22, 22) and InputPressed("lmb") then
-			-- 		if list.items[i].active then
-			-- 			Command("mods.deactivate", list.items[i].id)
-			-- 			updateMods()
-			-- 			list.items[i].active = false
-			-- 		else
-			-- 			Command("mods.activate", list.items[i].id)
-			-- 			updateMods()
-			-- 			list.items[i].active = true
-			-- 		end
-			-- 	end
-			-- 	UiPop()
-
-			-- 	UiPush()
-			-- 		UiTranslate(2, -6)
-			-- 		UiAlign("center middle")
-			-- 		UiScale(0.5)
-			-- 		if list.items[i].active then
-			-- 			UiColor(1, 1, 0.5)
-			-- 			UiImage("menu/mod-active.png")
-			-- 		else
-			-- 			UiImage("menu/mod-inactive.png")
-			-- 		end
-			-- 	UiPop()
-			-- end
 			UiPush()
 				UiAlign("left middle")
 				UiPush()
@@ -469,12 +418,8 @@ function selectLevel() -- edited for TDMP
 					UiImage(list.items[i].image)
 				UiPop()
 
-				UiTranslate(75+10, 0)
-				
-				UiTranslate(0, 75/2-18)
-				-- if issubscribedlist and list.items[i].showbold then
-				-- 	UiFont("bold.ttf", 20)
-				-- end
+				UiTranslate(75+10, 75/2-18)
+
 				UiText(list.items[i].name)
 			UiPop()
 			UiTranslate(0, 75)
@@ -488,66 +433,6 @@ function selectLevel() -- edited for TDMP
 
 	return ret, rmb_pushed
 end
-
--- function drawSandbox(scale)
--- 	local open = true
--- 	UiPush()
--- 		local w = 840
--- 		local h = 440
--- 		UiTranslate(UiCenter(), UiMiddle())
--- 		UiScale(scale*gUiScaleUpFactor)
--- 		UiColorFilter(1, 1, 1, scale)
--- 		UiColor(0,0,0, 0.5)
--- 		UiAlign("center middle")
--- 		UiImageBox("common/box-solid-shadow-50.png", w, h, -50, -50)
--- 		UiWindow(w, h)
--- 		UiAlign("left top")
--- 		UiColor(1,1,1)
--- 		if InputPressed("esc") or (not UiIsMouseInRect(UiWidth(), UiHeight()) and InputPressed("lmb")) then
--- 			open = false
--- 		end
-
--- 		UiPush()
--- 			UiFont("bold.ttf", 48)
--- 			UiColor(1,1,1)
--- 			UiAlign("center")
--- 			UiTranslate(UiCenter(), 80)
--- 			UiText("SANDBOX")
--- 		UiPop()
-		
--- 		UiPush()
--- 			UiFont("regular.ttf", 22)
--- 			local tw, th = UiGetTextSize("Free roam sandbox play with unlimited resources and no challenge.")
--- 			UiTranslate(w/2 - tw/2, 90)
--- 			UiWordWrap(tw)
--- 			UiColor(0.8, 0.8, 0.8)
--- 			UiText("Free roam sandbox play with unlimited resources and no challenge.Play the campaign to unlock more environments and tools. If you want to unlock everything without playing through the campaign you can enable that in the options menu.")
--- 		UiPop()
-
--- 		UiPush()
--- 			UiTranslate(0, 220)
--- 			local selected = selectLevel(nil, GetInt("options.game.sandbox.unlocklevels") == 1, false)
--- 			if selected then
--- 				for i=1, #gSandbox do
--- 					if selected == gSandbox[i].level then
--- 						if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then
--- 							TDMP_StartLevel(false, gSandbox[i].id, gSandbox[i].file, gSandbox[i].layers)
--- 						end
-
--- 						if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
--- 							StartLevel(gSandbox[i].id, gSandbox[i].file, gSandbox[i].layers)
--- 						else
--- 							UiSound("error.ogg")
--- 						end
--- 					end
--- 				end
--- 			end
--- 		UiPop()
-
--- 	UiPop()
--- 	return open
--- end
-
 
 function listMods(list, w, h, issubscribedlist)
 	local ret = ""
@@ -1832,39 +1717,6 @@ function mainMenu()
 			UiAlign("top left")
 			UiTranslate(25, 25)
 
-			-- UiColorFilter(1,1,1,.25)
-			-- if UiTextButton("Campaign", bw, bh) then
-			-- 	UiSound("error.ogg")
-			-- 	-- startHub()
-			-- end	
-			-- UiColorFilter(1,1,1,1/.25)
-			-- UiTranslate(0, bo)
-
-			local serverExists = TDMP_IsServerExists()
-			if UiTextButton(serverExists and "Join" or "Sandbox", bw, bh) then
-				UiSound("common/click.ogg")
-
-				if not serverExists then
-					SetValue("gSandboxScale", 1, "cosine", 0.25)
-				else
-					TDMP_JoinLaunchedGame()
-				end
-			end			
-			UiTranslate(0, bo)
-
-			UiColorFilter(1,1,1,.25)
-			if UiTextButton("Challenges", bw, bh) then
-				UiSound("error.ogg")
-				-- SetValue("gChallengesScale", 1, "cosine", 0.25)
-				-- gChallengeLevel = ""
-				-- gChallengeLevelScale = 0
-			end	
-			UiColorFilter(1,1,1,1/.25)		
-			UiTranslate(0, bo)
-
-			UiTranslate(0, 22)
-
-			
 			UiTranslate(0, bo)
 			if UiTextButton("Mod manager", bw, bh) then
 				UiSound("common/click.ogg")
@@ -1877,30 +1729,6 @@ function mainMenu()
 			
 		UiPop()
 	end
-	-- if gSandboxScale > 0 then
-	-- 	UiPush()
-	-- 		UiBlur(gSandboxScale)
-	-- 		UiColor(0.7,0.7,0.7, 0.25*gSandboxScale)
-	-- 		UiRect(UiWidth(), UiHeight())
-	-- 		UiModalBegin()
-	-- 		if not drawSandbox(gSandboxScale) then
-	-- 			SetValue("gSandboxScale", 0, "cosine", 0.25)
-	-- 		end
-	-- 		UiModalEnd()
-	-- 	UiPop()
-	-- end
-	-- if gChallengesScale > 0 then
-	-- 	UiPush()
-	-- 		UiBlur(gChallengesScale)
-	-- 		UiColor(0.7,0.7,0.7, 0.25*gChallengesScale)
-	-- 		UiRect(UiWidth(), UiHeight())
-	-- 		UiModalBegin()
-	-- 		if not drawChallenges(gChallengesScale) then
-	-- 			SetValue("gChallengesScale", 0, "cosine", 0.25)
-	-- 		end
-	-- 		UiModalEnd()
-	-- 	UiPop()
-	-- end
 	if gCreateScale > 0 then
 		UiPush()
 			UiBlur(gCreateScale-gPublishScale)
@@ -2056,7 +1884,7 @@ function drawTdmp()
 					UiColor(0.96, 0.96, 0.96)
 
 					UiTranslate(36,-32 - 16)
-					UiText(i.." : "..member.nick .. (member.isOwner and " (Host)" or ""))
+					UiText(member.nick .. (member.isOwner and " (Host)" or ""))
 				UiPop()
 			end
 			end
@@ -2096,13 +1924,11 @@ function drawTdmp()
 			end
 		UiPop()
 
-		-- UiAlign("top left")
 		
 		UiTranslate(local_w-25-25-400, 0)
-		UiColor(0, 0, 0, 0.75)
+		-- UiColor(0, 0, 0, 0.75)
 		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
 
-		-- UiTranslate(-(local_w-25-25), 0)
 
 		UiPush() -- Map selection box
 			UiTranslate(10, 10)
@@ -2121,14 +1947,14 @@ function drawTdmp()
 			end
 
 			UiTranslate(0,30)
-			selectLevel()
+			tdmpMapSelector()
 		UiPop()
 
 		-- UiAlign("top left")
 		UiPush()
 			UiColor(1,1,1)
 			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
-			UiTranslate(0, local_h - 50 - bh*1.5)
+			UiTranslate(400-bw, local_h - 50 - bh*1.5)
 			UiColor(0.96, 0.96, 0.96)
 			if UiTextButton(serverExists and "Join" or "Start", bw, bh*1.5) then
 				UiSound("common/click.ogg")
