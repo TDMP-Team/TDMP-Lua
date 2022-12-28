@@ -1,7 +1,7 @@
 #include "game.lua"
 #include "options_tdmp.lua"
 #include "score.lua"
-#include "promo.lua"
+-- #include "promo.lua"
 #include "../tdmp/json.lua"
 
 bgItems = {nil, nil}
@@ -220,6 +220,17 @@ function initSlideshow()
 		initSlideShowLevel("cullington")
 	end
 
+
+	-- add tdmp images for slideshow
+	local i=1
+	while HasFile("menu/tdmp/"..i..".jpg") do
+		local item = {}
+		item.image = "menu/tdmp/"..i..".jpg"
+		item.promo = ""
+		slideshowImages[#slideshowImages+1] = item
+		i = i + 1
+	end
+
 	--Scramble order
 	for i=1, #slideshowImages do
 		local j = math.random(1, #slideshowImages)
@@ -227,16 +238,6 @@ function initSlideshow()
 		slideshowImages[j] = slideshowImages[i]
 		slideshowImages[i] = tmp
 	end
-
-	local old = slideshowImages[1]
-
-	local item = {}
-	item.image = "menu/tdmp.jpg"
-	item.promo = ""
-	slideshowImages[1] = item
-
-	slideshowImages[#slideshowImages + 1] = old
-	
 
 	--Reset the slideshow ticker to point at first image with no previous image
 	bgPromoIndex[0] = -1
@@ -476,246 +477,6 @@ function drawSandbox(scale)
 	return open
 end
 
-
---Return list of challenges for level, sorted alphabetically with unlocked first
-function getChallengesForLevel(level)
-	local ret = {}
-	local locked = {}
-	for id, ch in pairs(gChallenges) do
-		if ch.level == level then
-			if isChallengeUnlocked(id) then
-				ret[#ret+1] = id
-			else
-				locked[#locked+1] = id
-			end
-		end
-	end
-	table.sort(ret, function(a,b) return gChallenges[a].title < gChallenges[b].title end)
-	table.sort(locked, function(a,b) return gChallenges[a].title < gChallenges[b].title end)
-	for i=1,#locked do 
-		ret[#ret+1] = locked[i]
-	end
-	return ret
-end
-
-
-function isChallengeUnlocked(id)
-	local c = gChallenges[id]
-	if c.unlockMission then
-		return GetInt("savegame.mission." .. c.unlockMission .. ".score") > 0
-	end
-	return true
-end
-
-
-function getChallengeStars(id)
-	return GetInt("savegame.challenge." .. id .. ".stars")
-end
-
-
-function getChallengeScoreDetails(id)
-	return GetString("savegame.challenge." .. id .. ".scoredetails")
-end
-
-
-function drawChallenges(scale)
-	local open = true
-	UiPush()
-		local w = 840
-		local h = 400 + gChallengeLevelScale*300
-		UiTranslate(UiCenter(), UiMiddle())
-		UiScale(scale*gUiScaleUpFactor)
-		UiColorFilter(1, 1, 1, scale)
-		UiColor(0,0,0, 0.5)
-		UiAlign("center middle")
-		UiImageBox("common/box-solid-shadow-50.png", w, h, -50, -50)
-		UiWindow(w, h)
-		UiAlign("left top")
-		UiColor(1,1,1)
-		if InputPressed("esc") or (not UiIsMouseInRect(UiWidth(), UiHeight()) and InputPressed("lmb")) then
-			open = false
-		end
-
-		UiPush()
-			UiFont("bold.ttf", 48)
-			UiColor(1,1,1)
-			UiAlign("center")
-			UiTranslate(UiCenter(), 80)
-			UiText("CHALLENGES")
-		UiPop()
-		
-		UiPush()
-			UiFont("regular.ttf", 22)
-			local tw, th = UiGetTextSize("You play challenges with the same tools and upgrades you have unlocked in the campaign.")
-			UiTranslate(w/2 - tw/2, 90)
-			UiWordWrap(tw)
-			UiColor(0.8, 0.8, 0.8)
-			UiText("Challenges are experimental game modes where you can try out your skills. Unlock new environments and challenges by playing the campaign. You play challenges with the same tools and upgrades you have unlocked in the campaign.")
-		UiPop()
-	
-		UiPush()
-			UiTranslate(0, 190)
-			local selected = selectLevel(gChallengeLevel, false, true)
-			if selected ~= gChallengeLevel then
-				SetValue("gChallengeLevelScale", 1, "cosine", 0.25)
-				gChallengeLevel = selected
-				gChallengeSelected = ""
-			end
-		UiPop()
-		
-		UiTranslate(34, 400)
-		if gChallengeLevelScale > 0 then
-			UiPush()
-				UiScale(1, gChallengeLevelScale)
-				UiColor(1,1,1)
-				UiPush()
-					UiPush()
-						UiTranslate(10, 0)
-						UiFont("bold.ttf", 32)
-						UiText("Challenge")
-					UiPop()
-					UiTranslate(0, 40)
-					UiWindow(200, 200)
-					UiColor(1,1,1,0.05)
-					UiImageBox("common/box-solid-6.png", UiWidth(), UiHeight(), 6, 6)
-					UiTranslate(10, 28)
-					UiFont("regular.ttf", 22)
-					UiColor(1,1,1)
-					local list = getChallengesForLevel(gChallengeLevel)
-					UiAlign("left")
-					local lockedInfo = false
-					if #list == 0 then
-						UiColor(1, 1, 1, 0.5)
-						UiTranslate(430, 80)
-						UiText("Coming soon!")
-					end
-					for i=1, #list do
-						local id = list[i]
-						local mouseOver = false
-						UiPush()
-							local unlocked = isChallengeUnlocked(id)
-							UiTranslate(-10, -18)
-							UiColor(0,0,0,0)
-							if gChallengeSelected == id then
-								UiColor(1,1,1,0.1)
-							else
-								if UiIsMouseInRect(UiWidth(), 28) then
-									mouseOver = true
-									UiColor(0,0,0,0.1)
-									if not unlocked then
-										lockedInfo = true
-									end
-								end
-							end
-							if unlocked and mouseOver then
-								if InputPressed("lmb") then
-									UiSound("terminal/message-select.ogg")
-									gChallengeSelected = id
-								end
-							end
-							UiRect(UiWidth(), 28)
-						UiPop()
-						UiPush()
-							if not unlocked then
-								UiColor(1,1,1,0.5)
-								UiPush()
-									UiTranslate(170, -7)
-									UiAlign("center middle")
-									UiImage("menu/locked-small.png")
-								UiPop()
-							else
-								local stars = getChallengeStars(id)
-								if stars > 0 then
-									UiPush()
-										UiTranslate(170, -6)
-										UiAlign("center middle")
-										UiScale(0.6)
-										for i=1,stars do
-											UiImage("common/star.png")
-											UiTranslate(-25, 0)
-										end
-									UiPop()
-								end
-							end
-							UiTranslate(0, 2)
-							UiText(gChallenges[id].title, true)
-						UiPop()
-						UiTranslate(0, 28)
-					end
-				UiPop()
-				if lockedInfo then
-					UiPush()
-						UiAlign("center middle")
-						UiTranslate(90,  270)
-						UiFont("regular.ttf", 20)
-						UiColor(.8, .8, .8)
-						UiText("Unlocked in\ncampaign")
-					UiPop()
-				end
-				UiPush()
-					UiTranslate(250, 0)
-					if gChallengeSelected ~= "" then
-						UiPush()
-							UiTranslate(10, 0)
-							UiFont("bold.ttf", 32)
-							UiText(gChallenges[gChallengeSelected].title)
-						UiPop()
-					end
-					UiTranslate(0, 40)
-					UiWindow(520, 200)
-					UiColor(1,1,1,0.05)
-					UiImageBox("common/box-solid-6.png", UiWidth(), UiHeight(), 6, 6)
-					UiColor(1,1,1)
-
-					if gChallengeSelected ~= "" then
-						local challenge = gChallenges[gChallengeSelected]
-						UiPush()
-							UiTranslate(10, 10)
-							UiFont("regular.ttf", 20)
-							UiWordWrap(UiWidth()-20)
-							UiText(challenge.desc)
-						UiPop()
-						local stars = getChallengeStars(gChallengeSelected)
-						local details = getChallengeScoreDetails(gChallengeSelected)
-						if stars > 0 or details ~= "" then
-							UiPush()
-								UiTranslate(20, 125)
-								UiFont("regular.ttf", 20)
-								UiPush()
-									UiColor(1,1,0.5)
-									for i=1,stars do
-										UiImage("common/star.png")
-										UiTranslate(25, 0)
-									end
-									for i=stars+1, 5 do
-										UiImage("common/star-outline.png")
-										UiTranslate(25, 0)
-									end
-								UiPop()
-								UiTranslate(0, 30)
-								UiText(details)
-							UiPop()
-						end
-						UiPush()
-							UiFont("regular.ttf", 26)
-							UiTranslate(UiWidth()-120, UiHeight()-40)
-							UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1, 0.7)
-							UiAlign("center middle")	
-							UiPush()
-								UiColor(.7, 1, .8, 0.2)
-								UiImageBox("common/box-solid-6.png", 200, 40, 6, 6)
-							UiPop()
-							if UiTextButton("Play", 200, 40) then
-								StartLevel(gChallengeSelected, challenge.file, challenge.layers)
-							end
-						UiPop()	
-					end
-				UiPop()
-			UiPop()
-		end
-	UiPop()
-	return open
-end
 
 function listMods(list, w, h, issubscribedlist)
 	local ret = ""
@@ -1993,13 +1754,13 @@ function mainMenu()
 			UiAlign("top left")
 			UiTranslate(25, 25)
 
-			UiColorFilter(1,1,1,.25)
-			if UiTextButton("Campaign", bw, bh) then
-				UiSound("error.ogg")
-				-- startHub()
-			end	
-			UiColorFilter(1,1,1,1/.25)
-			UiTranslate(0, bo)
+			-- UiColorFilter(1,1,1,.25)
+			-- if UiTextButton("Campaign", bw, bh) then
+			-- 	UiSound("error.ogg")
+			-- 	-- startHub()
+			-- end	
+			-- UiColorFilter(1,1,1,1/.25)
+			-- UiTranslate(0, bo)
 
 			local serverExists = TDMP_IsServerExists()
 			if UiTextButton(serverExists and "Join" or "Sandbox", bw, bh) then
@@ -2025,23 +1786,7 @@ function mainMenu()
 
 			UiTranslate(0, 22)
 
-			UiPush()
-				if not GetBool("promo.available") then
-					UiDisableInput()
-					UiColorFilter(1,1,1,0.5)
-				end
-				if UiTextButton("Featured mods", bw, bh) then
-					UiSound("common/click.ogg")
-					promoShow()
-				end
-				if GetBool("savegame.promoupdated") then
-					UiPush()
-						UiTranslate(200, 0)
-						UiAlign("center middle")
-						UiImage("menu/promo-notification.png")
-					UiPop()
-				end
-			UiPop()
+			
 			UiTranslate(0, bo)
 			if UiTextButton("Mod manager", bw, bh) then
 				UiSound("common/click.ogg")
@@ -2051,31 +1796,7 @@ function mainMenu()
 				selectMod("")
 			end	
 			UiTranslate(0, bo + 22)
-			if UiTextButton("Invite friends", bw, bh) then
-				UiSound("common/click.ogg")
-				TDMP_InviteFriends()
-			end
-
-			if TDMP_IsLobbyValid() then
-				UiTranslate(0, bo)
-				UiColor(1, .5, .5, 1)
-				local isOwner = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
-				if UiTextButton(isOwner and "Re-create lobby" or "Leave lobby", bw, bh) then
-					UiSound("common/click.ogg")
-
-					yesNoInit("Are you sure that you want to " .. (isOwner and "re-create" or "leave") .. " the lobby?","",function()
-						TDMP_LeaveLobby()
-					end)
-				end
-				UiColor(1,1,1,1)
-			else
-				UiTranslate(0, bo)
-				UiColor(.75, .75, .75, 1)
-				if UiTextButton("Waiting for lobby", bw, bh) then
-					UiSound("error.ogg")
-				end
-				UiColor(1,1,1,1)
-			end
+			
 		UiPop()
 	end
 	if gSandboxScale > 0 then
@@ -2090,18 +1811,18 @@ function mainMenu()
 			UiModalEnd()
 		UiPop()
 	end
-	if gChallengesScale > 0 then
-		UiPush()
-			UiBlur(gChallengesScale)
-			UiColor(0.7,0.7,0.7, 0.25*gChallengesScale)
-			UiRect(UiWidth(), UiHeight())
-			UiModalBegin()
-			if not drawChallenges(gChallengesScale) then
-				SetValue("gChallengesScale", 0, "cosine", 0.25)
-			end
-			UiModalEnd()
-		UiPop()
-	end
+	-- if gChallengesScale > 0 then
+	-- 	UiPush()
+	-- 		UiBlur(gChallengesScale)
+	-- 		UiColor(0.7,0.7,0.7, 0.25*gChallengesScale)
+	-- 		UiRect(UiWidth(), UiHeight())
+	-- 		UiModalBegin()
+	-- 		if not drawChallenges(gChallengesScale) then
+	-- 			SetValue("gChallengesScale", 0, "cosine", 0.25)
+	-- 		end
+	-- 		UiModalEnd()
+	-- 	UiPop()
+	-- end
 	if gCreateScale > 0 then
 		UiPush()
 			UiBlur(gCreateScale-gPublishScale)
@@ -2143,10 +1864,6 @@ end
 
 
 function drawBackground()
-	if promo_full_initiated == false and GetBool("promo.available") and GetInt("savegame.startcount") >= 5 then
-		promo_full_initiated = true
-		initSlideShowPromo()
-	end
 
 	UiPush()
 		if bgTimer >= 0 then
@@ -2171,9 +1888,6 @@ function drawBackground()
 		bgDraw(bgItems[bgCurrent])
 	UiPop()
 
-	if promo_full_initiated then
-		promoDrawFeatured()
-	end
 end
 
 local invite
@@ -2188,18 +1902,57 @@ function Remap(value, inMin, inMax, outMin, outMax)
 end
 
 function drawTdmp()
-	UiPush()
-		UiAlign("bottom left")
-		UiTranslate(3, UiHeight() - 1)
-		UiFont("regular.ttf", 24)
-		UiColor(1, 1, 1, .5)
+	local bw = 206
+	local bh = 40
+	local bo = 48
 
-		if not TDMP_IsLobbyValid() then
-			UiText("Creating lobby.. ")
-		else
-			local members = TDMP_GetLobbyMembers()
+	local local_w = UiWidth() - 200
+	local local_h = UiHeight() - 300
+
+	UiPush()	
+		UiTranslate(100, 200)
+		-- UiScale(1, gPlayScale)
+		-- UiColorFilter(1,1,1,gPlayScale)
+		-- if gPlayScale < 0.5 then
+			-- UiColorFilter(1,1,1,gPlayScale*2)
+		-- end
+		UiColor(0,0,0,0.5)
+		UiFont("regular.ttf", 26)
+		UiImageBox("common/box-solid-10.png", local_w, local_h, 10, 10)
+
+		UiWindow(UiWidth() - 200, UiHeight() - 300, true)
+		UiColor(1,1,1)
+		UiButtonImageBox("common/box-outline-6.png", 6, 6)
+
+		UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
+		UiColor(0, 0, 0, 0.75)
+
+		
+
+
+
+		UiAlign("top left")
+		UiTranslate(25, 25)
+
+		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
+
+		UiPush() -- Lobby member box
+			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
+			UiWindow(400, local_h - 50 - bh*1.5 - 25, true)
+			UiColor(0.96, 0.96, 0.96)
+
+			UiTranslate(10, 10)
+
+			if not TDMP_IsLobbyValid() then
+				UiText("Creating lobby.. ")
+			else
+				local members = TDMP_GetLobbyMembers()
+
+				UiText("Lobby members " .. #members .. "/" .. TDMP_MaxPlayers)
+
+				
 			for i, member in ipairs(members) do
-				UiTranslate(0,-36)
+				UiTranslate(0,36)
 				
 				UiPush()
 					UiAlign("middle left")
@@ -2207,6 +1960,7 @@ function drawTdmp()
 					for x=1,32 do
 						for y=1,32 do
 							UiColor(member.avatar[pixel+1]/255,member.avatar[pixel+2]/255,member.avatar[pixel+3]/255,1)
+							-- UiColor(math.random(0,255)/255,math.random(0,255)/255,math.random(0,255)/255)
 							UiRect(1, 1)
 
 							UiTranslate(1,0)
@@ -2215,70 +1969,95 @@ function drawTdmp()
 						UiTranslate(-32,1)
 					end
 					UiTranslate(0,32)
-					UiColor(1, 1, 1, .5)
+					UiColor(0.96, 0.96, 0.96)
 
 					UiTranslate(36,-32 - 16)
-					UiText(member.nick .. (member.isOwner and " (Host)" or ""))
+					UiText(i.." : "..member.nick .. (member.isOwner and " (Host)" or ""))
 				UiPop()
 			end
-			UiText("Lobby members " .. #members .. "/" .. TDMP_MaxPlayers)
-		end
-	UiPop()
+			end
+		UiPop()
 
-	if invite then
-		local left = invite.die - TDMP_FixedTime()
-		local timeout = left <= 0
+		UiPush() -- Buttons under Lobby members
+			UiTranslate(0, local_h - 50 - bh*1.5)
+			UiColor(0.96, 0.96, 0.96)
 
-		if timeout and invite.canBeDeleted then
-			invite = nil
-		else
-			invite.animation = math.min(1, invite.animation + (timeout and -.05 or .05))
-			if timeout and invite.animation <= 0 then invite.canBeDeleted = true end
+			if UiTextButton("Invite friends", bw, bh*1.5) then
+				UiSound("common/click.ogg")
+				TDMP_InviteFriends()
+			end
 
-			UiPush()
-				local w, h = 400, 95
+			UiTranslate(bw+25, 0)
+			if TDMP_IsLobbyValid() then
+				-- UiTranslate(0, bo)
+				UiColor(1, .5, .5, 1)
+				local isOwner = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
+				if UiTextButton(isOwner and "Re-create lobby" or "Leave lobby", bw, bh*1.5) then
+					UiSound("common/click.ogg")
 
-				UiTranslate(UiCenter()-w/2, UiHeight() - h*invite.animation)
-				UiAlign("top left")
-				UiColor(.0, .0, .0, .75)
-				UiImageBox("ui/common/box-solid-10.png", w, h, 10, 10)
-				UiWindow(w, h)
-				UiTranslate(5, 5)
-
-				UiColor(1,1,1,1)
-				UiFont("bold.ttf", 24)
-				UiText(timeout and (invite.accepted and "Accepted!" or "Ignored!") or "Invite to the lobby")
-				UiTranslate(0, 24)
-
-				UiFont("regular.ttf", 18)
-				UiText(invite.nick .. " has invited you to their lobby")
-
-				UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1)
-				UiTranslate(0, 22)
-				UiFont("regular.ttf", 18)
-				-- UiColor(.2, .6, .2, .75)
-				-- UiImageBox("common/box-solid-6.png", 100, 22, 6, 6)
-				UiFont("regular.ttf", 18)
-				UiColor(1,1,1,1)
-				if UiTextButton("Accept", 100, 24) then
-					TDMP_JoinLobby(invite.lobby)
-					invite.accepted = true
-					invite.die = 0
+					yesNoInit("Are you sure that you want to " .. (isOwner and "re-create" or "leave") .. " the lobby?","",function()
+						TDMP_LeaveLobby()
+					end)
 				end
+				UiColor(1,1,1,1)
+			else
+				-- UiTranslate(0, bo)
+				UiColor(.75, .75, .75, 1)
+				if UiTextButton("Waiting for lobby", bw, bh*1.5) then
+					UiSound("error.ogg")
+				end
+				UiColor(1,1,1,1)
+			end
+		UiPop()
 
-				UiTranslate(0, 30)
+		UiAlign("top right")
+		
+		UiTranslate(local_w-25-25, 0)
+		UiColor(0, 0, 0, 0.75)
+		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
 
-				UiColor(1,1,1, .25)
-				UiRect(w-10, 5)
+		-- UiTranslate(-(local_w-25-25), 0)
+		UiPush() -- Map selection box
+			UiTranslate(-400, 0)
+			UiAlign("top left")
+			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
+			UiWindow(400, local_h - 50 - bh*1.5 - 25, true)
+			UiColor(0.96, 0.96, 0.96)
 
-				UiColor(1,1,1, 1)
-				UiRect((w-10) * Remap(left, 0, 5, 0, 1), 5)
-			UiPop()
-		end
-	end
+			UiTranslate(10, 10)
+
+			if not TDMP_IsLobbyValid() then
+				UiText("Creating lobby.. ")
+			else
+				UiText("Map selection:")
+			end
+		UiPop()
+
+		-- UiAlign("top left")
+
+		UiTranslate(0, local_h - 50 - bh*1.5)
+		UiColor(0.96, 0.96, 0.96)
+		if UiTextButton(serverExists and "Join" or "Start", bw, bh*1.5) then
+			UiSound("common/click.ogg")
+
+			if not serverExists then
+				SetValue("gSandboxScale", 1, "cosine", 0.25)
+			else
+				TDMP_JoinLaunchedGame()
+			end
+		end			
+
+		-- UiTranslate(-1400, 0)
+		
+
+		
+	UiPop()
 end
 
+
 local tdmpVersion = TDMP_Version()
+
+
 function draw()
 	UiButtonHoverColor(0.8,0.8,0.8,1)
 
@@ -2289,7 +2068,11 @@ function draw()
 		UiWindow(x1-x0,y1-y0, true)
 
 		drawBackground()
+
+		drawTdmp()
+
 		mainMenu()
+
 		
 	UiPop()
 
@@ -2327,7 +2110,7 @@ function draw()
 		UiPop()
 	end
 	
-	promoDraw()
+	-- promoDraw()
 
 	local dt = GetTimeStep()*5
 	if #pendingLevel > 0 then
@@ -2371,8 +2154,8 @@ function draw()
 		end
 	end
 
-	local s, err = pcall(drawTdmp) -- dumb walk-around of lua error when something happens in lobby (such as re-creation of lobby or member leave)
-	if not s then TDMP_Print(err) end
+	-- local s, err = pcall(drawTdmp) -- dumb walk-around of lua error when something happens in lobby (such as re-creation of lobby or member leave)
+	-- if not s then TDMP_Print(err) end
 
 	-- yes-no popup
 	if yesNoPopup.show and yesNo() then
