@@ -7,6 +7,9 @@
 bgItems = {nil, nil}
 bgCurrent = 0
 bgPromoIndex = {}
+bgIndex = 0
+bgInterval = 6
+bgTimer = bgInterval
 
 -- Context Menu
 showContextMenu = false
@@ -29,208 +32,6 @@ end
 downloadingMod = 0
 loadOnModMap = nil
 pendingLevel = {}
-
-
-function loadLevel(mod, a)
-	if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then return end
-
-	if mod then
-		local modId = a
-		if startsWith(modId, "steam-") and not HasKey("mods.available."..modId) then
-			Command("mods.subscribe", modId)
-			pendingLevel[#pendingLevel + 1] = modId
-			loadOnModMap = modId
-		else
-			loadOnModMap = nil
-			downloadingMod = 0
-		end
-		Command("mods.play", a)
-	else
-		a = json.decode(a)
-		StartLevel(a[1], a[2], a[3])
-	end
-end
-
--- Yes-No popup
-yesNoPopup = 
-{
-	show = false,
-	yes  = false,
-	text = "",
-	item = "",
-	yes_fn = nil
-}
-function yesNoInit(text,item,fn)
-	yesNoPopup.show = true
-	yesNoPopup.yes  = false
-	yesNoPopup.text = text
-	yesNoPopup.item = item
-	yesNoPopup.yes_fn = fn
-end
-
-function yesNo()
-	local clicked = false
-	UiModalBegin()
-	UiPush()
-		local w = 500
-		local h = 160
-		UiTranslate(UiCenter()-250, UiMiddle()-85)
-		UiAlign("top left")
-		UiWindow(w, h)
-		UiColor(0.2, 0.2, 0.2)
-		UiImageBox("common/box-solid-6.png", w, h, 6, 6)
-		UiColor(1, 1, 1)
-		UiImageBox("common/box-outline-6.png", w, h, 6, 6)
-
-		if InputPressed("esc") then
-			yesNoPopup.yes = false
-			return true
-		end
-
-		UiColor(1,1,1,1)
-		UiTranslate(16, 16)
-		UiPush()
-			UiTranslate(60, 20)
-			UiFont("regular.ttf", 22)
-			UiColor(1,1,1)
-			UiText(yesNoPopup.text)
-		UiPop()
-		
-		UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1)
-		UiTranslate(77, 70)
-		UiFont("regular.ttf", 22)
-		UiColor(0.6, 0.2, 0.2)
-		UiImageBox("common/box-solid-6.png", 140, 40, 6, 6)
-		UiFont("regular.ttf", 26)
-		UiColor(1,1,1,1)
-		if UiTextButton("Yes", 140, 40) then
-			yesNoPopup.yes = true
-			clicked = true
-		end
-
-		UiTranslate(170, 0)
-		if UiTextButton("No", 140, 40) then
-			yesNoPopup.yes = false
-			clicked = true
-		end
-	UiPop()
-	UiModalEnd()
-	return clicked
-end
-
-function deleteModCallback()
-	if yesNoPopup.item ~= "" then
-		Command("mods.delete", yesNoPopup.item)
-		updateMods()
-	end
-end
-
-
-function bgLoad(i)
-	bg = {}
-	bg.i = i+1
-	bg.t = 0
-	bg.x = 0
-	bg.y = 0
-	bg.vx = 0
-	bg.vy = 0
-	return bg
-end
-
-
-function bgDraw(bg)
-	if bg then
-		UiPush()
-			local dt = GetTimeStep()
-			bg.t = bg.t + dt
-			local a = math.min(bg.t*0.6, 1.0)
-			UiColor(1,1,1,a)
-			UiScale(1.03 + bg.t*0.01)
-			UiTranslate(bg.x, bg.y)
-			if HasFile(slideshowImages[bg.i].image) then
-				UiImage(slideshowImages[bg.i].image)
-			end
-		UiPop()
-	end
-end
-
-bgIndex = 0
-bgInterval = 6
-bgTimer = bgInterval
-
-function initSlideShowLevel(level)
-	local i=1
-	while HasFile("menu/slideshow/"..level..i..".jpg") do
-		local item = {}
-		item.image = "menu/slideshow/"..level..i..".jpg"
-		item.promo = ""
-		slideshowImages[#slideshowImages+1] = item
-		i = i + 1
-	end
-end
-
-
-function initSlideshow()
-	slideshowImages = {}
-
-	initSlideShowLevel("hub")
-	if isLevelUnlocked("lee") then
-		initSlideShowLevel("lee")
-	end
-	if isLevelUnlocked("marina") then
-		initSlideShowLevel("marina")
-	end
-	if isLevelUnlocked("mansion") then
-		initSlideShowLevel("mansion")
-	end
-	if isLevelUnlocked("mall") then
-		initSlideShowLevel("mall")
-	end
-	if isLevelUnlocked("caveisland") then
-		initSlideShowLevel("caveisland")
-	end
-	if isLevelUnlocked("frustrum") then
-		initSlideShowLevel("frustrum")
-	end
-	if isLevelUnlocked("carib") then
-		initSlideShowLevel("carib")
-	end
-	if isLevelUnlocked("factory") then
-		initSlideShowLevel("factory")
-	end
-	if isLevelUnlocked("cullington") then
-		initSlideShowLevel("cullington")
-	end
-
-
-	-- add tdmp images for slideshow
-	local i=1
-	while HasFile("menu/tdmp/"..i..".jpg") do
-		local item = {}
-		item.image = "menu/tdmp/"..i..".jpg"
-		item.promo = ""
-		slideshowImages[#slideshowImages+1] = item
-		i = i + 1
-	end
-
-	--Scramble order
-	for i=1, #slideshowImages do
-		local j = math.random(1, #slideshowImages)
-		local tmp = slideshowImages[j]
-		slideshowImages[j] = slideshowImages[i]
-		slideshowImages[i] = tmp
-	end
-
-	--Reset the slideshow ticker to point at first image with no previous image
-	bgPromoIndex[0] = -1
-	bgPromoIndex[1] = -1
-
-	bgIndex = 0
-	bgCurrent = 0
-	bgItems[0] = bgLoad(bgIndex)
-	bgItems[1] = nil
-	bgTimer = bgInterval	
-end
 
 function init()
 	SetInt("savegame.startcount", GetInt("savegame.startcount")+1)
@@ -289,6 +90,48 @@ function init()
 end
 
 
+
+--------------------------------------- Background stuff
+
+function bgLoad(i)
+	bg = {}
+	bg.i = i+1
+	bg.t = 0
+	bg.x = 0
+	bg.y = 0
+	bg.vx = 0
+	bg.vy = 0
+	return bg
+end
+
+function bgDraw(bg)
+	if bg then
+		UiPush()
+			local dt = GetTimeStep()
+			bg.t = bg.t + dt
+			local a = math.min(bg.t*0.6, 1.0)
+			UiColor(1,1,1,a)
+			UiScale(1.03 + bg.t*0.01)
+			UiTranslate(bg.x, bg.y)
+			if HasFile(slideshowImages[bg.i].image) then
+				UiImage(slideshowImages[bg.i].image)
+			end
+		UiPop()
+	end
+end
+
+
+function initSlideShowLevel(level)
+	local i=1
+	while HasFile("menu/slideshow/"..level..i..".jpg") do
+		local item = {}
+		item.image = "menu/slideshow/"..level..i..".jpg"
+		item.promo = ""
+		slideshowImages[#slideshowImages+1] = item
+		i = i + 1
+	end
+end
+
 function isLevelUnlocked(level)
 	local missions = ListKeys("savegame.mission")
 	local levelMissions = {}
@@ -303,6 +146,283 @@ function isLevelUnlocked(level)
 	return false
 end
 
+function initSlideshow()
+	slideshowImages = {}
+
+	initSlideShowLevel("hub")
+	if isLevelUnlocked("lee") then
+		initSlideShowLevel("lee")
+	end
+	if isLevelUnlocked("marina") then
+		initSlideShowLevel("marina")
+	end
+	if isLevelUnlocked("mansion") then
+		initSlideShowLevel("mansion")
+	end
+	if isLevelUnlocked("mall") then
+		initSlideShowLevel("mall")
+	end
+	if isLevelUnlocked("caveisland") then
+		initSlideShowLevel("caveisland")
+	end
+	if isLevelUnlocked("frustrum") then
+		initSlideShowLevel("frustrum")
+	end
+	if isLevelUnlocked("carib") then
+		initSlideShowLevel("carib")
+	end
+	if isLevelUnlocked("factory") then
+		initSlideShowLevel("factory")
+	end
+	if isLevelUnlocked("cullington") then
+		initSlideShowLevel("cullington")
+	end
+
+	-- add tdmp images for slideshow
+	local i=1
+	while HasFile("menu/tdmp/"..i..".jpg") do
+		local item = {}
+		item.image = "menu/tdmp/"..i..".jpg"
+		item.promo = ""
+		slideshowImages[#slideshowImages+1] = item
+		i = i + 1
+	end
+
+	--Scramble order
+	for i=1, #slideshowImages do
+		local j = math.random(1, #slideshowImages)
+		local tmp = slideshowImages[j]
+		slideshowImages[j] = slideshowImages[i]
+		slideshowImages[i] = tmp
+	end
+
+	--Reset the slideshow ticker to point at first image with no previous image
+	bgPromoIndex[0] = -1
+	bgPromoIndex[1] = -1
+
+	bgIndex = 0
+	bgCurrent = 0
+	bgItems[0] = bgLoad(bgIndex)
+	bgItems[1] = nil
+	bgTimer = bgInterval	
+end
+
+function drawBackground()
+	UiPush()
+		if bgTimer >= 0 then
+			bgTimer = bgTimer - GetTimeStep()
+			if bgTimer < 0 then
+				bgIndex = math.mod(bgIndex + 1, #slideshowImages)
+				if bgPromoIndex[0] >= 0 then
+					bgIndex = bgPromoIndex[0]
+					bgPromoIndex[0] = bgPromoIndex[1]
+					bgPromoIndex[1] = -1
+				end
+				bgTimer = bgInterval
+
+				bgCurrent = 1-bgCurrent
+				bgItems[bgCurrent] = bgLoad(bgIndex)
+			end
+		end
+
+		UiTranslate(UiCenter(), UiMiddle())
+		UiAlign("center middle")
+		bgDraw(bgItems[1-bgCurrent])
+		bgDraw(bgItems[bgCurrent])
+	UiPop()
+end
+
+--------------------------------------- TDMP stuff
+
+local tdmpVersion = TDMP_Version()
+
+function drawTdmp()
+	local bw = 206
+	local bh = 40
+	local bo = 48
+
+	local local_w = UiWidth() - 200
+	local local_h = UiHeight() - 300
+
+	UiPush()	
+		UiTranslate(100, 200)
+		-- UiScale(1, gPlayScale)
+		-- UiColorFilter(1,1,1,gPlayScale)
+		-- if gPlayScale < 0.5 then
+			-- UiColorFilter(1,1,1,gPlayScale*2)
+		-- end
+		UiColor(0,0,0,0.5)
+		UiFont("regular.ttf", 26)
+		UiImageBox("common/box-solid-10.png", local_w, local_h, 10, 10)
+
+		UiWindow(UiWidth() - 200, UiHeight() - 300, true)
+
+		UiColor(0, 0, 0, 0.75)
+
+		UiAlign("top left")
+		UiTranslate(25, 25)
+
+		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
+
+		UiPush() -- Lobby member box
+			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
+			UiWindow(400, local_h - 50 - bh*1.5 - 25, true)
+			-- DebugPrint(local_h - 50 - bh*1.5 - 25) -- 645
+			UiColor(0.96, 0.96, 0.96)
+
+			UiTranslate(10, 10)
+
+			if not TDMP_IsLobbyValid() then
+				UiText("Creating lobby.. ")
+			else
+				local members = TDMP_GetLobbyMembers()
+
+				-- members[2] = {nick="test player"}
+				-- members[3] = {nick="test player"}
+				-- members[4] = {nick="test player"}
+				-- members[5] = {nick="test player"}
+				-- members[6] = {nick="test player"}
+				-- members[7] = {nick="test player"}
+				-- members[8] = {nick="test player"}
+
+				UiText("Lobby members " .. #members .. "/" .. TDMP_MaxPlayers)
+
+				
+			for i, member in ipairs(members) do
+				UiTranslate(0,36)
+				
+				UiPush()
+					UiAlign("middle left")
+					local pixel = 0
+					for x=1,32 do
+						for y=1,32 do
+							UiColor(member.avatar[pixel+1]/255,member.avatar[pixel+2]/255,member.avatar[pixel+3]/255,1)
+							-- UiColor(1,1,1)
+							UiRect(1, 1)
+
+							UiTranslate(1,0)
+							pixel = pixel + 4
+						end
+						UiTranslate(-32,1)
+					end
+					UiTranslate(0,32)
+					UiColor(0.96, 0.96, 0.96)
+
+					UiTranslate(36,-32 - 16)
+					UiText(member.nick .. (member.isOwner and " (Host)" or ""))
+				UiPop()
+			end
+			end
+		UiPop()
+
+		UiPush() -- Buttons under Lobby members
+			UiColor(1,1,1)
+			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
+			UiTranslate(0, local_h - 50 - bh*1.5)
+			UiColor(0.96, 0.96, 0.96)
+
+			if UiTextButton("Invite friends", bw, bh*1.5) then
+				UiSound("common/click.ogg")
+				TDMP_InviteFriends()
+			end
+
+			UiTranslate(bw+25, 0)
+			if TDMP_IsLobbyValid() then
+				-- UiTranslate(0, bo)
+				UiColor(1, .5, .5, 1)
+				local isOwner = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
+				if UiTextButton(isOwner and "Re-create lobby" or "Leave lobby", bw, bh*1.5) then
+					UiSound("common/click.ogg")
+
+					yesNoInit("Are you sure that you want to " .. (isOwner and "re-create" or "leave") .. " the lobby?","",function()
+						TDMP_LeaveLobby()
+					end)
+				end
+				UiColor(1,1,1,1)
+			else
+				-- UiTranslate(0, bo)
+				UiColor(.75, .75, .75, 1)
+				if UiTextButton("Waiting for lobby", bw, bh*1.5) then
+					UiSound("error.ogg")
+				end
+				UiColor(1,1,1,1)
+			end
+		UiPop()
+
+		
+		UiTranslate(local_w-25-25-400, 0)
+		-- UiColor(0, 0, 0, 0.75)
+		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
+
+
+		UiPush() -- Map selection box
+			UiTranslate(10, 10)
+			-- UiAlign("top left")
+			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
+			UiWindow(380, local_h - 50 - bh*1.5 - 25-20, true)
+			UiColor(0.96, 0.96, 0.96)
+
+			-- UiTranslate(10, 10)
+
+			if not TDMP_IsLobbyValid() then
+				UiText("Creating lobby.. ")
+			else
+				UiText("Map selection:")
+				
+			end
+
+			UiTranslate(0,30)
+			tdmpMapSelector()
+		UiPop()
+
+		-- UiAlign("top left")
+		UiPush()
+			UiColor(1,1,1)
+			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
+			UiTranslate(400-bw, local_h - 50 - bh*1.5)
+			UiColor(0.96, 0.96, 0.96)
+			if UiTextButton(serverExists and "Join" or "Start", bw, bh*1.5) then
+				UiSound("common/click.ogg")
+
+				if not serverExists then
+					SetValue("gSandboxScale", 1, "cosine", 0.25)
+				else
+					TDMP_JoinLaunchedGame()
+				end
+			end			
+		UiPop()
+		-- UiTranslate(-1400, 0)
+		
+
+		
+	UiPop()
+end
+
+function loadLevel(mod, a)
+	if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then return end
+
+	if mod then
+		local modId = a
+		if startsWith(modId, "steam-") and not HasKey("mods.available."..modId) then
+			Command("mods.subscribe", modId)
+			pendingLevel[#pendingLevel + 1] = modId
+			loadOnModMap = modId
+		else
+			loadOnModMap = nil
+			downloadingMod = 0
+		end
+		Command("mods.play", a)
+	else
+		a = json.decode(a)
+		StartLevel(a[1], a[2], a[3])
+	end
+end
+
+function updateMaps()
+	for i=1, #gSandbox do
+		tdmpMapList.items[i] =  { level = gSandbox[i].level, image = gSandbox[i].image, name = gSandbox[i].name}
+	end
+end
 
 function tdmpMapSelector() -- edited for TDMP
 
@@ -433,6 +553,15 @@ function tdmpMapSelector() -- edited for TDMP
 
 	return ret, rmb_pushed
 end
+
+local invite
+function onLobbyInvite(inviter, lobbyId)
+	if invite then return end
+
+	invite = {nick = inviter, die = TDMP_FixedTime() + 5, animation = 0, lobby = lobbyId}
+end
+
+--------------------------------------- Mods Menu stuff
 
 function listMods(list, w, h, issubscribedlist)
 	local ret = ""
@@ -597,11 +726,9 @@ function listMods(list, w, h, issubscribedlist)
 	return ret, rmb_pushed
 end
 
-
 function getActiveModCount(builtinmod, steammod, localmod)
 
 	local count = 0
-
 	local mods = ListKeys("mods.available")
 	for i=1,#mods do
 		local id = mods[i]
@@ -622,7 +749,6 @@ function getActiveModCount(builtinmod, steammod, localmod)
 	return count
 end
 
-
 function deactivateMods(builtinmod, steammod, localmod)
 	local mods = ListKeys("mods.available")
 	for i=1,#mods do
@@ -641,14 +767,6 @@ function deactivateMods(builtinmod, steammod, localmod)
 		end
 	end
 end
-
-
-function updateMaps()
-	for i=1, #gSandbox do
-		tdmpMapList.items[i] =  { level = gSandbox[i].level, image = gSandbox[i].image, name = gSandbox[i].name}
-	end
-end
-
 
 function updateMods()
 	Command("mods.refresh")
@@ -707,7 +825,6 @@ function updateMods()
 	end
 end
 
-
 function selectMod(mod)
 	gModSelected = mod
 	if mod ~= "" then
@@ -715,7 +832,6 @@ function selectMod(mod)
 	Command("game.selectmod", gModSelected)
 	end
 end
-
 
 function contextMenu(sel_mod)
 	local open = true
@@ -835,6 +951,12 @@ function contextMenu(sel_mod)
 	return open
 end
 
+function deleteModCallback()
+	if yesNoPopup.item ~= "" then
+		Command("mods.delete", yesNoPopup.item)
+		updateMods()
+	end
+end
 
 function contextMenuSubscribed(sel_mod)
 	local open = true
@@ -926,7 +1048,6 @@ function contextMenuSubscribed(sel_mod)
 	return open
 end
 
-
 function contextMenuBuiltin(sel_mod)
 	local open = true
 	UiModalBegin()
@@ -984,7 +1105,6 @@ function contextMenuBuiltin(sel_mod)
 
 	return open
 end
-
 
 function drawCreate(scale)
 	local open = true
@@ -1631,7 +1751,77 @@ function drawCreate(scale)
 	return open
 end
 
-function mainMenu()
+--------------------------------------- Yes-No pop-up
+
+yesNoPopup = 
+{
+	show = false,
+	yes  = false,
+	text = "",
+	item = "",
+	yes_fn = nil
+}
+function yesNoInit(text,item,fn)
+	yesNoPopup.show = true
+	yesNoPopup.yes  = false
+	yesNoPopup.text = text
+	yesNoPopup.item = item
+	yesNoPopup.yes_fn = fn
+end
+
+function yesNo()
+	local clicked = false
+	UiModalBegin()
+	UiPush()
+		local w = 500
+		local h = 160
+		UiTranslate(UiCenter()-250, UiMiddle()-85)
+		UiAlign("top left")
+		UiWindow(w, h)
+		UiColor(0.2, 0.2, 0.2)
+		UiImageBox("common/box-solid-6.png", w, h, 6, 6)
+		UiColor(1, 1, 1)
+		UiImageBox("common/box-outline-6.png", w, h, 6, 6)
+
+		if InputPressed("esc") then
+			yesNoPopup.yes = false
+			return true
+		end
+
+		UiColor(1,1,1,1)
+		UiTranslate(16, 16)
+		UiPush()
+			UiTranslate(60, 20)
+			UiFont("regular.ttf", 22)
+			UiColor(1,1,1)
+			UiText(yesNoPopup.text)
+		UiPop()
+		
+		UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1)
+		UiTranslate(77, 70)
+		UiFont("regular.ttf", 22)
+		UiColor(0.6, 0.2, 0.2)
+		UiImageBox("common/box-solid-6.png", 140, 40, 6, 6)
+		UiFont("regular.ttf", 26)
+		UiColor(1,1,1,1)
+		if UiTextButton("Yes", 140, 40) then
+			yesNoPopup.yes = true
+			clicked = true
+		end
+
+		UiTranslate(170, 0)
+		if UiTextButton("No", 140, 40) then
+			yesNoPopup.yes = false
+			clicked = true
+		end
+	UiPop()
+	UiModalEnd()
+	return clicked
+end
+
+--------------------------------------- Rest
+
+function drawTopBar()
 	UiPush()
 		UiColor(0,0,0, 0.75)
 		UiRect(UiWidth(), 150)
@@ -1755,7 +1945,6 @@ function mainMenu()
 	end
 end
 
-
 function tick()
 	if GetTime() > 0.1 then
 		if gActivations >= 2 then
@@ -1768,216 +1957,11 @@ function tick()
 	
 end
 
-
-function drawBackground()
-
-	UiPush()
-		if bgTimer >= 0 then
-			bgTimer = bgTimer - GetTimeStep()
-			if bgTimer < 0 then
-				bgIndex = math.mod(bgIndex + 1, #slideshowImages)
-				if bgPromoIndex[0] >= 0 then
-					bgIndex = bgPromoIndex[0]
-					bgPromoIndex[0] = bgPromoIndex[1]
-					bgPromoIndex[1] = -1
-				end
-				bgTimer = bgInterval
-
-				bgCurrent = 1-bgCurrent
-				bgItems[bgCurrent] = bgLoad(bgIndex)
-			end
-		end
-
-		UiTranslate(UiCenter(), UiMiddle())
-		UiAlign("center middle")
-		bgDraw(bgItems[1-bgCurrent])
-		bgDraw(bgItems[bgCurrent])
-	UiPop()
-
-end
-
-local invite
-function onLobbyInvite(inviter, lobbyId)
-	if invite then return end
-
-	invite = {nick = inviter, die = TDMP_FixedTime() + 5, animation = 0, lobby = lobbyId}
-end
-
 function Remap(value, inMin, inMax, outMin, outMax)
 	return outMin + (((value - inMin) / (inMax - inMin)) * (outMax - outMin))
 end
 
-function drawTdmp()
-	local bw = 206
-	local bh = 40
-	local bo = 48
-
-	local local_w = UiWidth() - 200
-	local local_h = UiHeight() - 300
-
-	UiPush()	
-		UiTranslate(100, 200)
-		-- UiScale(1, gPlayScale)
-		-- UiColorFilter(1,1,1,gPlayScale)
-		-- if gPlayScale < 0.5 then
-			-- UiColorFilter(1,1,1,gPlayScale*2)
-		-- end
-		UiColor(0,0,0,0.5)
-		UiFont("regular.ttf", 26)
-		UiImageBox("common/box-solid-10.png", local_w, local_h, 10, 10)
-
-		UiWindow(UiWidth() - 200, UiHeight() - 300, true)
-
-		UiColor(0, 0, 0, 0.75)
-
-		
-
-
-
-		UiAlign("top left")
-		UiTranslate(25, 25)
-
-		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
-
-		UiPush() -- Lobby member box
-			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
-			UiWindow(400, local_h - 50 - bh*1.5 - 25, true)
-			-- DebugPrint(local_h - 50 - bh*1.5 - 25) -- 645
-			UiColor(0.96, 0.96, 0.96)
-
-			UiTranslate(10, 10)
-
-			if not TDMP_IsLobbyValid() then
-				UiText("Creating lobby.. ")
-			else
-				local members = TDMP_GetLobbyMembers()
-
-				-- members[2] = {nick="test player"}
-				-- members[3] = {nick="test player"}
-				-- members[4] = {nick="test player"}
-				-- members[5] = {nick="test player"}
-				-- members[6] = {nick="test player"}
-				-- members[7] = {nick="test player"}
-				-- members[8] = {nick="test player"}
-
-				UiText("Lobby members " .. #members .. "/" .. TDMP_MaxPlayers)
-
-				
-			for i, member in ipairs(members) do
-				UiTranslate(0,36)
-				
-				UiPush()
-					UiAlign("middle left")
-					local pixel = 0
-					for x=1,32 do
-						for y=1,32 do
-							UiColor(member.avatar[pixel+1]/255,member.avatar[pixel+2]/255,member.avatar[pixel+3]/255,1)
-							-- UiColor(1,1,1)
-							UiRect(1, 1)
-
-							UiTranslate(1,0)
-							pixel = pixel + 4
-						end
-						UiTranslate(-32,1)
-					end
-					UiTranslate(0,32)
-					UiColor(0.96, 0.96, 0.96)
-
-					UiTranslate(36,-32 - 16)
-					UiText(member.nick .. (member.isOwner and " (Host)" or ""))
-				UiPop()
-			end
-			end
-		UiPop()
-
-		UiPush() -- Buttons under Lobby members
-			UiColor(1,1,1)
-			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
-			UiTranslate(0, local_h - 50 - bh*1.5)
-			UiColor(0.96, 0.96, 0.96)
-
-			if UiTextButton("Invite friends", bw, bh*1.5) then
-				UiSound("common/click.ogg")
-				TDMP_InviteFriends()
-			end
-
-			UiTranslate(bw+25, 0)
-			if TDMP_IsLobbyValid() then
-				-- UiTranslate(0, bo)
-				UiColor(1, .5, .5, 1)
-				local isOwner = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
-				if UiTextButton(isOwner and "Re-create lobby" or "Leave lobby", bw, bh*1.5) then
-					UiSound("common/click.ogg")
-
-					yesNoInit("Are you sure that you want to " .. (isOwner and "re-create" or "leave") .. " the lobby?","",function()
-						TDMP_LeaveLobby()
-					end)
-				end
-				UiColor(1,1,1,1)
-			else
-				-- UiTranslate(0, bo)
-				UiColor(.75, .75, .75, 1)
-				if UiTextButton("Waiting for lobby", bw, bh*1.5) then
-					UiSound("error.ogg")
-				end
-				UiColor(1,1,1,1)
-			end
-		UiPop()
-
-		
-		UiTranslate(local_w-25-25-400, 0)
-		-- UiColor(0, 0, 0, 0.75)
-		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
-
-
-		UiPush() -- Map selection box
-			UiTranslate(10, 10)
-			-- UiAlign("top left")
-			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
-			UiWindow(380, local_h - 50 - bh*1.5 - 25-20, true)
-			UiColor(0.96, 0.96, 0.96)
-
-			-- UiTranslate(10, 10)
-
-			if not TDMP_IsLobbyValid() then
-				UiText("Creating lobby.. ")
-			else
-				UiText("Map selection:")
-				
-			end
-
-			UiTranslate(0,30)
-			tdmpMapSelector()
-		UiPop()
-
-		-- UiAlign("top left")
-		UiPush()
-			UiColor(1,1,1)
-			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
-			UiTranslate(400-bw, local_h - 50 - bh*1.5)
-			UiColor(0.96, 0.96, 0.96)
-			if UiTextButton(serverExists and "Join" or "Start", bw, bh*1.5) then
-				UiSound("common/click.ogg")
-
-				if not serverExists then
-					SetValue("gSandboxScale", 1, "cosine", 0.25)
-				else
-					TDMP_JoinLaunchedGame()
-				end
-			end			
-		UiPop()
-		-- UiTranslate(-1400, 0)
-		
-
-		
-	UiPop()
-end
-
-
-local tdmpVersion = TDMP_Version()
-
-
-function draw()
+function draw()  -- main funtion
 	UiButtonHoverColor(0.8,0.8,0.8,1)
 
 	UiPush()
@@ -1990,14 +1974,14 @@ function draw()
 
 		drawTdmp()
 
-		mainMenu()
+		drawTopBar()
 
 		
 	UiPop()
 
-	if not gDeploy and mainMenuDebug then
-		mainMenuDebug()
-	end
+	-- if not gDeploy and mainMenuDebug then
+	-- 	mainMenuDebug()
+	-- end
 
 	UiPush()
 		local version = GetString("game.version")
