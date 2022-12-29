@@ -15,6 +15,8 @@ if not TDMP_LocalSteamID then return end
 
 #include "data/script/common.lua"
 
+#include "chat.lua"
+
 Bullets_FlyBy = {}
 Bullets_FlyBy_Sub = {}
 Bullets_PlayerDamage = {}
@@ -60,26 +62,6 @@ local stepMaterials = {
 	["water"] = {6, 6, 22},
 	["wood"] = {8, 8, 23},
 }
-
--- https://github.com/iskolbin/lhsx/blob/master/hsx.lua
-local function hsv2rgb(h, s, v)
-	local C = v * s
-	local m = v - C
-	local r, g, b = m, m, m
-	if h == h then
-		local h_ = (h % 1.0) * 6
-		local X = C * (1 - math.abs(h_ % 2 - 1))
-		C, X = C + m, X + m
-		if     h_ < 1 then r, g, b = C, X, m
-		elseif h_ < 2 then r, g, b = X, C, m
-		elseif h_ < 3 then r, g, b = m, C, X
-		elseif h_ < 4 then r, g, b = m, X, C
-		elseif h_ < 5 then r, g, b = X, m, C
-		else               r, g, b = C, m, X
-		end
-	end
-	return r, g, b
-end
 
 playersWithFlashlight = {}
 do
@@ -128,7 +110,7 @@ do
 	end
 
 	InitTools()
-
+	initChat()
 	initTank()
 
 	TDMP_RegisterEvent("FetchAllModels", function(data, steamid)
@@ -450,6 +432,8 @@ function tick(dt)
 	if not tdmpSettingsActive and tdmpSettingsAlpha == 1.0 then
 		SetValue("tdmpSettingsAlpha", 0.0, "easein", 0.3)
 	end
+
+	tickChat(dt)
 end
 
 function update(dt)
@@ -524,6 +508,8 @@ function draw()
 	DrawPlayerModelSelector()
 	DrawWeatherSettings()
 	DrawTDMPSettings()
+
+	drawChat()
 end
 
 local settingsHeight = 500
@@ -595,6 +581,7 @@ function DrawSettings()
 	end
 end
 
+local bindKey = false
 local settingsWide = 250
 function DrawTDMPSettings()
 	if tdmpSettingsAlpha > 0 then
@@ -715,6 +702,21 @@ function DrawTDMPSettings()
 			end
 			UiTranslate(0, bh+space)
 
+			UiColor(.96, .96, .96)
+			if UiTextButton(bindKey and "Press any key" or "Open chat key: " .. GetString("savegame.mod.tdmp.chatkey"), settingsWide, bh) then
+				bindKey = true
+			end
+			UiTranslate(0, bh+space)
+
+			if bindKey then
+				local newKey = InputLastPressedKey()
+
+				if newKey ~= "" and newKey ~= "esc" then
+					SetString("savegame.mod.tdmp.chatkey", newKey)
+					bindKey = false
+				end
+			end
+
 			UiTranslate(0, sep)
 
 			if UiTextButton("Close", 150, bh) then
@@ -722,6 +724,8 @@ function DrawTDMPSettings()
 				settingsActive = true
 			end
 		UiPop()
+	else
+		bindKey = false
 	end
 end
 
