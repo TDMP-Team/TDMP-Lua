@@ -120,7 +120,6 @@ function bgDraw(bg)
 	end
 end
 
-
 function initSlideShowLevel(level)
 	local i=1
 	while HasFile("menu/slideshow/"..level..i..".jpg") do
@@ -372,7 +371,8 @@ function drawTdmp()
 			end
 
 			UiTranslate(0,30)
-			tdmpMapSelector()
+			local tdmpSelectedMap = tdmpMapSelector()
+			DebugWatch("selected", tdmpSelectedMap)
 		UiPop()
 
 		-- UiAlign("top left")
@@ -380,14 +380,23 @@ function drawTdmp()
 			UiColor(1,1,1)
 			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
 			UiTranslate(400-bw, local_h - 50 - bh*1.5)
-			UiColor(0.96, 0.96, 0.96)
-			if UiTextButton(serverExists and "Join" or "Start", bw, bh*1.5) then
+			if tdmpSelectedMap then UiColor(0.96, 0.96, 0.96) else UiColor(1,0,0) end
+			if UiTextButton((not tdmpSelectedMap and "Select map") or (serverExists and "Join") or "Start", bw, bh*1.5) and tdmpSelectedMap then
 				UiSound("common/click.ogg")
 
 				if not serverExists then
-					SetValue("gSandboxScale", 1, "cosine", 0.25)
+					if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then
+						TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
+					end
+
+					if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+						StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
+					else
+						UiSound("error.ogg")
+					end
 				else
 					TDMP_JoinLaunchedGame()
+					DebugPrint("server exists")
 				end
 			end			
 		UiPop()
@@ -420,15 +429,15 @@ end
 
 function updateMaps()
 	for i=1, #gSandbox do
-		tdmpMapList.items[i] =  { level = gSandbox[i].level, image = gSandbox[i].image, name = gSandbox[i].name}
+		tdmpMapList.items[i] =  gSandbox[i]
 	end
 end
 
-function tdmpMapSelector() -- edited for TDMP
+function tdmpMapSelector()
 
 	local list, w, h, issubscribedlist = tdmpMapList , 400-10-10-14, 645-20-30, false
 
-	local ret = ""
+	local ret
 	local rmb_pushed = false
 	if list.isdragging and InputReleased("lmb") then
 		list.isdragging = false
@@ -517,6 +526,7 @@ function tdmpMapSelector() -- edited for TDMP
 				-- local id = list.items[i].id
 				if gMapSelected == i then
 					UiColor(1,1,1,0.1)
+					ret = tdmpMapList.items[i]
 				else
 					if mouseOver and UiIsMouseInRect(228, 75) then
 						UiColor(0,0,0,0.1)
@@ -551,7 +561,8 @@ function tdmpMapSelector() -- edited for TDMP
 
 	UiPop()
 
-	return ret, rmb_pushed
+	-- return ret, rmb_pushed
+	return ret
 end
 
 local invite
