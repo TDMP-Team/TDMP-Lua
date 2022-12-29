@@ -290,7 +290,7 @@ end)
 
 local died = {}
 function PlayerBodiesPlayerTick(ply)
-	if not ply:IsVisible() then
+	if not ply:IsVisible() or not ply:IsModelVisible() then
 		if PlayerBodies[ply:SteamID()] then
 			if PlayerBodies[ply:SteamID()].Parts then
 				for k, v in pairs(PlayerBodies[ply:SteamID()].Parts) do

@@ -54,6 +54,14 @@ function Player:IsVisible()
 	return not GetBool("tdmp." .. self:SteamID() .. ".notvisible")
 end
 
+function Player:SetModelVisible(state)
+	SetBool("tdmp." .. self:SteamID() .. ".modelnotvisible", not state)
+end
+
+function Player:IsModelVisible()
+	return not GetBool("tdmp." .. self:SteamID() .. ".modelnotvisible")
+end
+
 function Player:SetColor(r, g, b)
 	local steamid = self:SteamID()
 
