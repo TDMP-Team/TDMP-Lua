@@ -6,10 +6,10 @@ function TDMP_AddChatMessage(...)
 	for i, v in ipairs(args) do
 		local t = type(v)
 		if t == "table" then
-			if v.steamid then -- making player table smaller
-				v = {steamid = v.steamid, id = v.id}
+			if v.steamId then -- making player table smaller
+				args[i] = {steamId = v.steamId, id = v.id}
 			
-			elseif not v.steamid and not v[1] then -- checking that not trying to send unknown table
+			elseif not v.steamId and not v[1] then -- checking that not trying to send unknown table
 				error("tried to send table in TDMP_AddChatMessage!")
 
 				return
