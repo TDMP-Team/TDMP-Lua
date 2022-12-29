@@ -385,16 +385,17 @@ function drawTdmp()
 				if not serverExists then
 					if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then
 						if tdmpSelectedMap.isMod then
-							TDMP_StartLevel(true, tdmpSelectedMap)
+							TDMP_Print(tdmpSelectedMap.id)
+							TDMP_StartLevel(true, tdmpSelectedMap.id)
+							Command("mods.play", tdmpSelectedMap.id)
 						else
 							TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
+							if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+								StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
+							else
+								UiSound("error.ogg")
+							end
 						end
-					end
-
-					if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
-						StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
-					else
-						UiSound("error.ogg")
 					end
 				else
 					TDMP_JoinLaunchedGame()
@@ -451,6 +452,9 @@ function updateMaps()
 		mod.showbold = false
 		mod.layers = "sandbox"
 		mod.isMod = true
+		mod.file = GetString("mods.available."..mods[i]..".path").."/main.xml"
+
+		-- TDMP_Print(GetString("mods.available."..mods[i]..".path").."/main.xml")
 
 		local iscontentmod = GetBool("mods.available."..mods[i]..".playable")
 		if iscontentmod then
@@ -866,6 +870,7 @@ function updateMods()
 end
 
 function selectMod(mod)
+	TDMP_Print(mod)
 	gModSelected = mod
 	if mod ~= "" then
 		Command("mods.updateselecttime", gModSelected)
