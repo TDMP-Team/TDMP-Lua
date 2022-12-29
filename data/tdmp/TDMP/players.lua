@@ -97,56 +97,56 @@ function PlayerBody(steamid, playermodel, force)
 			local tr = GetBodyTransform(ent)
 			local lTr = TransformToLocalTransform(PlayerBody.Hip, tr)
 
-			if HasTag(ent, "playerBody_torso") ~= "" then
+			if HasTag(ent, "playerBody_torso") then
 				PlayerBody.Parts.Torso = {
 					hnd = ent,
 					localTransform = lTr
 				}
-			elseif HasTag(ent, "playerBody_head") ~= "" then
+			elseif HasTag(ent, "playerBody_head") then
 				PlayerBody.Parts.Head = {
 					hnd = ent,
 					localTransform = lTr
 				}
 
-			elseif HasTag(ent, "playerBody_right_leg_top") ~= "" then
+			elseif HasTag(ent, "playerBody_right_leg_top") then
 				PlayerBody.Parts.LegTopR = {
 					hnd = ent,
 					localTransform = lTr
 				}
-			elseif HasTag(ent, "playerBody_right_leg_bot") ~= "" then
+			elseif HasTag(ent, "playerBody_right_leg_bot") then
 				PlayerBody.Parts.LegBottomR = {
 					hnd = ent,
 					localTransform = lTr
 				}
 
-			elseif HasTag(ent, "playerBody_left_leg_top") ~= "" then
+			elseif HasTag(ent, "playerBody_left_leg_top") then
 				PlayerBody.Parts.LegTopL = {
 					hnd = ent,
 					localTransform = lTr
 				}
-			elseif HasTag(ent, "playerBody_left_leg_bot") ~= "" then
+			elseif HasTag(ent, "playerBody_left_leg_bot") then
 				PlayerBody.Parts.LegBottomL = {
 					hnd = ent,
 					localTransform = lTr
 				}
 
-			elseif HasTag(ent, "playerBody_right_arm_top") ~= "" then
+			elseif HasTag(ent, "playerBody_right_arm_top") then
 				PlayerBody.Parts.ArmTopR = {
 					hnd = ent,
 					localTransform = lTr
 				}
-			elseif HasTag(ent, "playerBody_right_arm_bot") ~= "" then
+			elseif HasTag(ent, "playerBody_right_arm_bot") then
 				PlayerBody.Parts.ArmBottomR = {
 					hnd = ent,
 					localTransform = lTr
 				}
 
-			elseif HasTag(ent, "playerBody_left_arm_top") ~= "" then
+			elseif HasTag(ent, "playerBody_left_arm_top") then
 				PlayerBody.Parts.ArmTopL = {
 					hnd = ent,
 					localTransform = lTr
 				}
-			elseif HasTag(ent, "playerBody_left_arm_bot") ~= "" then
+			elseif HasTag(ent, "playerBody_left_arm_bot") then
 				PlayerBody.Parts.ArmBottomL = {
 					hnd = ent,
 					localTransform = lTr
@@ -353,56 +353,56 @@ function PlayerBodiesPlayerTick(ply)
 						if steamid == "none" then
 							SetTag(ent, "SteamId", ply:SteamID())
 
-							if HasTag(ent, "playerBody_torso") ~= "" then
+							if HasTag(ent, "playerBody_torso") then
 								SetBodyTransform(ent, body.Parts.Torso:GetWorldTransform())
 								SetBodyVelocity(ent, VecScale(body.Velocity, 400))
 
-							elseif HasTag(ent, "playerBody_head") ~= "" then
+							elseif HasTag(ent, "playerBody_head") then
 								SetBodyTransform(ent, body.Parts.Head:GetWorldTransform())
 
-							elseif HasTag(ent, "playerBody_right_leg_top") ~= "" then
+							elseif HasTag(ent, "playerBody_right_leg_top") then
 								local tr = body.Parts.LegTopR:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 
 								SetBodyTransform(ent, tr)
 
-							elseif HasTag(ent, "playerBody_right_leg_bot") ~= "" then
+							elseif HasTag(ent, "playerBody_right_leg_bot") then
 								local tr = body.Parts.LegBottomR:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 
 								SetBodyTransform(ent, tr)
 
-							elseif HasTag(ent, "playerBody_left_leg_top") ~= "" then
+							elseif HasTag(ent, "playerBody_left_leg_top") then
 								local tr =  body.Parts.LegTopL:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 
 								SetBodyTransform(ent,tr)
 
-							elseif HasTag(ent, "playerBody_left_leg_bot") ~= "" then
+							elseif HasTag(ent, "playerBody_left_leg_bot") then
 								local tr = body.Parts.LegBottomL:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 
 								SetBodyTransform(ent,tr)
 
-							elseif HasTag(ent, "playerBody_right_arm_top") ~= "" then
+							elseif HasTag(ent, "playerBody_right_arm_top") then
 								local tr = body.Parts.ArmTopR:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 
 								SetBodyTransform(ent,tr)
 
-							elseif HasTag(ent, "playerBody_right_arm_bot") ~= "" then
+							elseif HasTag(ent, "playerBody_right_arm_bot") then
 								local tr = body.Parts.ArmBottomR:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 
 								SetBodyTransform(ent,tr)
 
-							elseif HasTag(ent, "playerBody_left_arm_top") ~= "" then
+							elseif HasTag(ent, "playerBody_left_arm_top") then
 								local tr = body.Parts.ArmTopL:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 
 								SetBodyTransform(ent,tr)
 
-							elseif HasTag(ent, "playerBody_left_arm_bot") ~= "" then
+							elseif HasTag(ent, "playerBody_left_arm_bot") then
 								local tr = body.Parts.ArmBottomL:GetWorldTransform()
 								tr.rot = QuatRotateQuat(tr.rot, rot90)
 

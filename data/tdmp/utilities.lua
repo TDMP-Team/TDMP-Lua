@@ -70,13 +70,14 @@ function TDMP_OverrideToolTransform(steamId, tr)
 end
 
 function TDMP_AddToolModel(toolUniqueId, data)
-	Hook_Run("AddToolModel", data)
-
 	Hook_AddListener(toolUniqueId .. "_CreateWorldModel", toolUniqueId, function(data)
+		data = json.decode(data)
 		local ents = Spawn(data[1], data[2])
 
 		return json.encode(ents)
 	end)
+
+	Hook_Run("AddToolModel", {data = data, tool = toolUniqueId})
 end
 
 -- https://www.iquilezles.org/www/articles/intersectors/intersectors.htm
@@ -135,15 +136,42 @@ end
 Returns shape which player interacts with. Mostly used for syncing buttons
 and triggers on the maps
 ---------------------------------------------------------------------------]]
-function TDMP_AnyPlayerInteractWithShape()
+function TDMP_AnyPlayerInteractWithShape(useDown)
 	local plys = TDMP_GetPlayers()
 	for i, v in ipairs(plys) do
 		local ply = Player(v.steamId)
 
-		if ply:IsInputPressed("interact") then
-			return ply:GetInteractShape()
+		if useDown then
+			if ply:IsInputDown("interact") then
+				return ply:GetInteractShape()
+			end
+		else
+			if ply:IsInputPressed("interact") then
+				return ply:GetInteractShape()
+			end
 		end
 	end
 
 	return -1
+end
+
+-- https://github.com/iskolbin/lhsx/blob/master/hsx.lua
+function hsv2rgb(h, s, v)
+	local C = v * s
+	local m = v - C
+	local r, g, b = m, m, m
+	if h == h then
+		local h_ = (h % 1.0) * 6
+		local X = C * (1 - math.abs(h_ % 2 - 1))
+		C, X = C + m, X + m
+		if     h_ < 1 then r, g, b = C, X, m
+		elseif h_ < 2 then r, g, b = X, C, m
+		elseif h_ < 3 then r, g, b = m, C, X
+		elseif h_ < 4 then r, g, b = m, X, C
+		elseif h_ < 5 then r, g, b = X, m, C
+		else               r, g, b = C, m, X
+		end
+	end
+	
+	return r, g, b
 end

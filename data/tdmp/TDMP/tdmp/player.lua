@@ -54,6 +54,37 @@ function Player:IsVisible()
 	return not GetBool("tdmp." .. self:SteamID() .. ".notvisible")
 end
 
+function Player:SetColor(r, g, b)
+	local steamid = self:SteamID()
+
+    SetFloat("tdmp.playercolor." .. steamid .. ".r", r)
+    SetFloat("tdmp.playercolor." .. steamid .. ".g", g)
+    SetFloat("tdmp.playercolor." .. steamid .. ".b", b)
+end
+
+function Player:GetColor(asTable)
+	local steamid = self:SteamID()
+
+    if not HasKey("tdmp.playercolor." .. steamid .. ".r") then
+        local rnd = math.random()
+        local r, g, b = hsv2rgb(rnd, 1, 1)
+
+        SetFloat("tdmp.playercolor." .. steamid .. ".r", r)
+        SetFloat("tdmp.playercolor." .. steamid .. ".g", g)
+        SetFloat("tdmp.playercolor." .. steamid .. ".b", b)
+    end
+
+    if asTable then
+    	return {
+    		GetFloat("tdmp.playercolor." .. steamid .. ".r"),
+    		GetFloat("tdmp.playercolor." .. steamid .. ".g"),
+    		GetFloat("tdmp.playercolor." .. steamid .. ".b")
+    	}
+    else
+    	return GetFloat("tdmp.playercolor." .. steamid .. ".r"), GetFloat("tdmp.playercolor." .. steamid .. ".g"), GetFloat("tdmp.playercolor." .. steamid .. ".b")
+    end
+end
+
 function Player:IsInputDown(buttonId)
 	if type(buttonId) == "string" then
 		if not TDMP.Input[buttonId] then
