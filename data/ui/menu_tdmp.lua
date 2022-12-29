@@ -435,7 +435,7 @@ end
 
 function tdmpMapSelector()
 
-	local list, w, h, issubscribedlist = tdmpMapList , 400-10-10-14, 645-20-30, false
+	local list, w, h= tdmpMapList , 400-10-10-14, 645-20-30
 
 	local ret
 	local rmb_pushed = false
@@ -458,6 +458,7 @@ function tdmpMapSelector()
 		end
 
 		local itemsInView = math.floor(h/75)
+		local someStupidFractionThatWhasMessingWithScroll = itemsInView/h
 		if #list.items > itemsInView then
 			local scrollCount = (#list.items-itemsInView)
 			if scrollCount < 0 then scrollCount = 0 end
@@ -466,10 +467,9 @@ function tdmpMapSelector()
 			local pos = -list.possmooth / #list.items
 			if list.isdragging then
 				local posx, posy = UiGetMousePos()
-				local dy = 0.0445 * (posy - list.dragstarty)
+				local dy = someStupidFractionThatWhasMessingWithScroll * (posy - list.dragstarty)
 				list.pos = -dy / frac
 			end
-
 			UiPush()
 				UiTranslate(w, 0)
 				UiColor(1,1,1, 0.07)
