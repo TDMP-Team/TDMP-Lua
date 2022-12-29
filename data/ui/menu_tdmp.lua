@@ -89,8 +89,6 @@ function init()
 	gDeploy = GetBool("game.deploy")
 end
 
-
-
 --------------------------------------- Background stuff
 
 function bgLoad(i)
@@ -261,11 +259,11 @@ function drawTdmp()
 		UiAlign("top left")
 		UiTranslate(25, 25)
 
-		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
+		UiImageBox("common/box-solid-10.png", 438, local_h - 50 - bh*1.5 - 25, 10, 10)
 
 		UiPush() -- Lobby member box
 			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
-			UiWindow(400, local_h - 50 - bh*1.5 - 25, true)
+			UiWindow(438, local_h - 50 - bh*1.5 - 25, true)
 			-- DebugPrint(local_h - 50 - bh*1.5 - 25) -- 645
 			UiColor(0.96, 0.96, 0.96)
 
@@ -349,16 +347,16 @@ function drawTdmp()
 		UiPop()
 
 		
-		UiTranslate(local_w-25-25-400, 0)
+		UiTranslate(local_w-25-25-438, 0)
 		-- UiColor(0, 0, 0, 0.75)
-		UiImageBox("common/box-solid-10.png", 400, local_h - 50 - bh*1.5 - 25, 10, 10)
+		UiImageBox("common/box-solid-10.png", 438, local_h - 50 - bh*1.5 - 25, 10, 10)
 
 
 		UiPush() -- Map selection box
 			UiTranslate(10, 10)
 			-- UiAlign("top left")
 			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
-			UiWindow(380, local_h - 50 - bh*1.5 - 25-20, true)
+			UiWindow(418, local_h - 50 - bh*1.5 - 25-20, true)
 			UiColor(0.96, 0.96, 0.96)
 
 			-- UiTranslate(10, 10)
@@ -379,14 +377,18 @@ function drawTdmp()
 		UiPush()
 			UiColor(1,1,1)
 			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
-			UiTranslate(400-bw, local_h - 50 - bh*1.5)
-			if tdmpSelectedMap then UiColor(0.96, 0.96, 0.96) else UiColor(1,0,0) end
-			if UiTextButton((not tdmpSelectedMap and "Select map") or (serverExists and "Join") or "Start", bw, bh*1.5) and tdmpSelectedMap then
+			UiTranslate(438-bw, local_h - 50 - bh*1.5)
+			if tdmpSelectedMap then UiColor(0.96, 0.96, 0.96) else UiColor(0.8,0.8,0.8) end
+			if UiTextButton((serverExists and "Join") or "Start", bw, bh*1.5) and tdmpSelectedMap then
 				UiSound("common/click.ogg")
 
 				if not serverExists then
 					if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then
-						TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
+						if tdmpSelectedMap.isMod then
+							TDMP_StartLevel(true, tdmpSelectedMap)
+						else
+							TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
+						end
 					end
 
 					if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
@@ -396,7 +398,6 @@ function drawTdmp()
 					end
 				else
 					TDMP_JoinLaunchedGame()
-					DebugPrint("server exists")
 				end
 			end			
 		UiPop()
@@ -429,13 +430,39 @@ end
 
 function updateMaps()
 	for i=1, #gSandbox do
-		tdmpMapList.items[i] =  gSandbox[i]
+		local sandBoxLevel = {}
+		sandBoxLevel = gSandbox[i]
+		sandBoxLevel.isMod = false 
+		tdmpMapList.items[i] = sandBoxLevel
+	end
+	local mods = ListKeys("mods.available")
+	local foundSelected = false
+	j = table.getn(gSandbox) + 1
+	for i=1, #mods do
+		local mod = {}
+		mod.id = mods[i]
+		mod.name = GetString("mods.available."..mods[i]..".listname")
+		mod.override = GetBool("mods.available."..mods[i]..".override") and not GetBool("mods.available."..mods[i]..".playable")
+		mod.active = GetBool("mods.available."..mods[i]..".active")
+		mod.steamtime = GetInt("mods.available."..mods[i]..".steamtime")
+		mod.subscribetime = GetInt("mods.available."..mods[i]..".subscribetime")
+		mod.tags = GetString("mods.available."..mods[i]..".tags")
+		mod.description = GetString("mods.available."..mods[i]..".description")
+		mod.showbold = false
+		mod.layers = "sandbox"
+		mod.isMod = true
+
+		local iscontentmod = GetBool("mods.available."..mods[i]..".playable")
+		if iscontentmod then
+			tdmpMapList.items[j] = mod
+			j = j + 1
+		end
 	end
 end
 
 function tdmpMapSelector()
 
-	local list, w, h= tdmpMapList , 400-10-10-14, 645-20-30
+	local list, w, h= tdmpMapList , 438-10-10-14, 645-20-30
 
 	local ret
 	local rmb_pushed = false
@@ -545,7 +572,9 @@ function tdmpMapSelector()
 					UiTranslate(10,75/2-18)
 					
 					UiScale(0.5)
-					UiImage(list.items[i].image)
+					if not list.items[i].isMod then
+						UiImage(list.items[i].image)
+					end
 				UiPop()
 
 				UiTranslate(75+10, 75/2-18)
