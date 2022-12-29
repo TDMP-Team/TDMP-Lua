@@ -60,3 +60,6 @@ vox/player/basil_ragdoll.xml : TDMP Models/Basil Ragdoll
 
 vox/player/mari.xml : TDMP Models/Mari
 vox/player/mari_ragdoll.xml : TDMP Models/Mari Ragdoll
+
+vox/player/sunny.xml : TDMP Models/Sunny
+vox/player/sunny_ragdoll.xml : TDMP Models/Sunny Ragdoll
