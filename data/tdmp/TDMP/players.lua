@@ -98,6 +98,8 @@ function PlayerBody(steamid, playermodel, force)
 			local lTr = TransformToLocalTransform(PlayerBody.Hip, tr)
 
 			if HasTag(ent, "playerBody_torso") then
+				SetTag(ent, "map")
+				SetDescription(ent, "Player "..(Player(steamid).nick)..";"..(Player(steamid).nick))
 				PlayerBody.Parts.Torso = {
 					hnd = ent,
 					localTransform = lTr
