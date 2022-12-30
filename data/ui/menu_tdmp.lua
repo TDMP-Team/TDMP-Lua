@@ -49,6 +49,10 @@ function loadLevel(mod, a)
 	end
 end
 
+function receivePacket(isHost, senderId, packet)
+	-- TDMP_Print(senderId, packet)
+end
+
 -- Yes-No popup
 yesNoPopup = 
 {
@@ -459,6 +463,17 @@ function drawSandbox(scale)
 				for i=1, #gSandbox do
 					if selected == gSandbox[i].level then
 						if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then
+							local toDownload = {}
+							for i, mod in ipairs(gMods[2].items) do
+								local supportedByMod = mod.description:lower():find("tdmp support is included") or mod.name:find("%[TDMP%]")
+
+								if supportedByMod or mod.tags:find("Spawn") then
+									toDownload[#toDownload + 1] = mod.id
+								end
+							end
+
+							-- TDMP_Print(tostring(#toDownload), "mods to download, " .. #json.encode(toDownload))
+							-- TDMP_SendLobbyPacket(json.encode(toDownload))
 							TDMP_StartLevel(false, gSandbox[i].id, gSandbox[i].file, gSandbox[i].layers)
 						end
 
