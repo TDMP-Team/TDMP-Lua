@@ -253,8 +253,8 @@ function drawTdmp()
 	local local_h = UiHeight() - 300
 
 	local inLobby = TDMP_IsLobbyValid()
-	-- local amIhost = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
-	local amIhost = false
+	local amIhost = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
+	-- local amIhost = false
 	local serverExists = TDMP_IsServerExists()
 	DebugWatch("host", amIhost)
 	DebugWatch("inlobby", inLobby)
@@ -446,17 +446,14 @@ function drawTdmp()
 					UiPush()
 						UiTranslate(10,75/2-18)
 
-						-- UiScale(0.5)
 						if not tdmpSelectedMap.isMod then
 							UiScale(0.5)
 							UiImage(tdmpSelectedMap.image)
-						-- elseif (-list.pos) < i-1 then
 						else
 							UiPush()
 							local imgPath = "RAW:"..GetString("mods.available."..tdmpSelectedMap.id..".path") .. "/preview.jpg"
 							UiScale(64/UiGetImageSize(imgPath))
 							UiImage(imgPath)
-							-- DebugPrint(list.items[i].path .. "/preview.jpg")
 							UiPop()
 						end
 					UiPop()
@@ -528,19 +525,14 @@ function drawTdmp()
 				-- 	DebugPrint("nope")
 				-- end
 
-				-- TDMP_SendLobbyPacket(json.encode({["type"] = 1, ["id"] = "steam-2791942606"}))
+				-- TDMP_SendLobbyPacket(json.encode({["task"] = 1, ["id"] = "steam-2791942606"}))
 
-				-- tdmpSelectedMap = { ["id"] = "steam-2594544248",
-				-- 		["isMod"] = true,
-				-- 		["name"] = "test name",
-				-- 		["download"] = false}
 
-				-- sendPacket(4, "marina_sandbox")
-				sendPacket(4, "steam-2594544248")
+				-- sendPacket(3, "marina_sandbox")
+				sendPacket(3, "steam-2594544248")
+				-- sendPacket(1, {"steam-2594544248", "steam-2513151641", "steam-2906876609"})
 
-				-- Command("mods.updateselecttime", gModSelected)
-				-- Command("game.selectmod", "steam-2399638219")
-				Command("mods.refresh")
+				-- Command("mods.refresh")
 				-- end
 				-- TDMP_SendLobbyPacket(json.encode(jsontest))
 				DebugPrint("clicked tha button")
@@ -625,10 +617,6 @@ end
 
 function updateMaps()
 	for i=1, #gSandbox do
-		-- local sandBoxLevel = {}
-		-- sandBoxLevel = gSandbox[i]
-		-- sandBoxLevel.isMod = false 
-		-- tdmpMapList.items[i] = sandBoxLevel
 		tdmpMapList.items[i] = gSandbox[i]
 		tdmpMapList.items[i].isMod = false
 	end
@@ -640,12 +628,6 @@ function updateMaps()
 		mod.id = mods[i]
 		mod.name = GetString("mods.available."..mods[i]..".listname")
 		mod.override = GetBool("mods.available."..mods[i]..".override") and not GetBool("mods.available."..mods[i]..".playable")
-		-- mod.active = GetBool("mods.available."..mods[i]..".active")
-		-- mod.steamtime = GetInt("mods.available."..mods[i]..".steamtime")
-		-- mod.subscribetime = GetInt("mods.available."..mods[i]..".subscribetime")
-		-- mod.tags = GetString("mods.available."..mods[i]..".tags")
-		-- mod.description = GetString("mods.available."..mods[i]..".description")
-		-- mod.showbold = false
 		mod.layers = "sandbox"
 		mod.isMod = true
 		mod.path = GetString("mods.available."..mods[i]..".path")
@@ -811,10 +793,10 @@ function tdmpMapSelector()
 	return ret
 end
 
-function tdmpModsList(type)
+function tdmpModsList()
 
 	-- local list, w, h= gMods[2] , 438-10-10-14-200, 645-20-30-300
-	local list, w, h= gMods[4] , 250, 645-20-30-300
+	local list, w, h= gMods[2] , 250, 645-20-30-300
 
 	local ret = ""
 	local rmb_pushed = false
@@ -988,34 +970,46 @@ end
 function receivePacket(isHost, senderId, packet)
 	TDMP_Print(senderId, packet)
 	local packetDecoded = json.decode(packet)
-	local type = packetDecoded.t
+	local task = packetDecoded.t
 	-- DebugPrint(packetDecoded.id)
-	DebugPrint(packetDecoded.t)
-	if type == 1 then
-		DebugPrint("tdmp mod added: ".. packetDecoded.id)
-	elseif type == 2 then
+	-- DebugPrint(packetDecoded.t)
+	if task == 1 and isHost then
+		tdmpModsAction(packetDecoded.ids, 1)
+	elseif task == 2 and isHost then
 		DebugPrint("tdmp mod removed: ".. packetDecoded.id)
-	elseif type == 3 then
-		DebugPrint("tdmp multiple mods added: ".. packetDecoded.ids)
-	elseif type == 4 then
-		tdmpSelectedMap = tdmpMapInfo(packetDecoded.id)
+	elseif task == 3 and isHost then
+		tdmpSelectedMap = tdmpMapInfo(packetDecoded.ids[1],packetDecoded.names[1])
 	end
 end
 
-function sendPacket(type, data)
-	-- local packet
-	TDMP_Print("sending packet:", type)
-	if type == 1 then
+
+function sendPacket(task, data)
+	local packet = {}
+	if task then
+		if type(data) == "string" then data = {data} end
 		
-	elseif type == 2 then
-	elseif type == 4 then
+		packet.ids = data
+		if task == 1 then
+			packet.names = {}
+			for i,v in ipairs(data) do
+				packet.names[i] = GetString("mods.available."..v..".listname")
+			end
+		elseif task == 3 then
+			if string.sub(data[1],1,6) == "steam-" then
+				packet.names = {}
+				packet.names[1] = GetString("mods.available."..data[1]..".listname")
+			end
+		end
 
-		TDMP_SendLobbyPacket(json.encode({["t"] = type, ["id"] = data}))
+		TDMP_Print("sending packet:", task)
+		DebugPrint(packet.ids[1])
+		TDMP_SendLobbyPacket(json.encode({t = task, ids = packet.ids, names = packet.names}))
+	else
+		TDMP_Print("sendPacket: no task specified")
 	end
-
 end
 
-function tdmpMapInfo(id)
+function tdmpMapInfo(id, name)
 	DebugPrint("got map for info, id: ".. id)
 	if string.sub(id,1,6) == "steam-" then
 		DebugPrint("got steam map")
@@ -1032,7 +1026,12 @@ function tdmpMapInfo(id)
 			DebugPrint(GetString("mods.available."..id..".listname"))
 			return map
 		end
-		DebugPrint("after ret")
+		local map = {}
+		map.id = id
+		map.name = name
+		map.isMod = true
+		map.download = true
+		return map
 	else
 		for i=1, #gSandbox do
 			if id == gSandbox[i].id then
@@ -1044,6 +1043,20 @@ function tdmpMapInfo(id)
 		end
 		DebugPrint("Recieved map id is invalid, id:"..id)
 	end
+end
+
+function tdmpModsAction(ids, action)
+	if action == 1 then
+		for i=1, #ids do
+			local id = ids[i]
+			if tdmpmodslist.ids[id] then
+				DebugPrint("there is a mod: "..id)
+			else
+				DebugPrint("need to download: "..id)
+			end
+		end
+	end
+	
 end
 
 --------------------------------------- Mods Menu stuff (edited)
