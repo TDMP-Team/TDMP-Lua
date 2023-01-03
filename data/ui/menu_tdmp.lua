@@ -973,11 +973,11 @@ function receivePacket(isHost, senderId, packet)
 	local task = packetDecoded.t
 	-- DebugPrint(packetDecoded.id)
 	-- DebugPrint(packetDecoded.t)
-	if task == 1 and isHost then
+	if task == 1 and not isHost then
 		tdmpModsAction(packetDecoded.ids, 1)
-	elseif task == 2 and isHost then
+	elseif task == 2 and not isHost then
 		DebugPrint("tdmp mod removed: ".. packetDecoded.id)
-	elseif task == 3 and isHost then
+	elseif task == 3 and  not isHost then
 		tdmpSelectedMap = tdmpMapInfo(packetDecoded.ids[1],packetDecoded.names[1])
 	end
 end
