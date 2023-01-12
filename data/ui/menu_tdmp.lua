@@ -80,7 +80,7 @@ function init()
 	tdmpList[3].state = {}
 
 	-- tdmpList[1] -- Maps
-	-- tdmpList[2] -- Mods to download
+	-- tdmpList[2] -- Mods in session
 
 	tdmpModListMode = 0
 
@@ -467,8 +467,7 @@ function drawTdmp()
 					UiColor(1,1,1,1)
 					if amIhost then
 						UiText("Mods:") 
-					else 
-						UiText("Mods requested by host:") end
+					
 						
 					UiTranslate(56, 0)
 					-- DebugWatch("test:", UiGetTextSize("Mods:"))
@@ -492,6 +491,9 @@ function drawTdmp()
 							-- updateMods()
 						end
 					end
+
+				else 
+					UiText("Mods requested by host:") end
 					
 				UiPop()
 
@@ -532,7 +534,7 @@ function drawTdmp()
 
 			if amIhost then
 				tdmpSelectedMap = tdmpMapSelector()
-			elseif tdmpSelectedMap and (tdmpSelectedMap.download == false) then
+			elseif tdmpSelectedMap and (tdmpSelectedMap.toDownload == false) then
 				UiPush()
 					UiTranslate(0, 10)
 					UiAlign("top left")
@@ -558,7 +560,7 @@ function drawTdmp()
 
 					UiText(tdmpSelectedMap.name)
 				UiPop()
-			elseif tdmpSelectedMap and (tdmpSelectedMap.download == true) then
+			elseif tdmpSelectedMap and (tdmpSelectedMap.toDownload == true) then
 				UiPush()
 					UiTranslate(0, 10)
 					UiAlign("top left")
@@ -853,7 +855,7 @@ function tdmpModsSelector(isDownload, whatList)
 	whatList = whatList or 0
 	if isDownload then
 		list = tdmpList[2]
-		DebugWatch("mods to DL", #tdmpList[2].items)
+		-- DebugWatch("mods to DL", #tdmpList[2].items)
 	elseif whatList == 0 then
 		list = gMods[4]
 	elseif whatList == 1 then
@@ -1006,6 +1008,18 @@ function tdmpModsSelector(isDownload, whatList)
 						UiImage("menu/mod-inactive.png")
 					end
 				UiPop()
+				else
+					UiPush()
+					UiTranslate(2, -6)
+					UiAlign("center middle")
+					UiScale(0.5)
+					if not list.items[i].toDownload then
+						UiColor(1, 1, 0.5)
+						UiImage("menu/mod-active.png")
+					else
+						UiImage("menu/mod-inactive.png")
+					end
+				UiPop()
 			end
 			UiPush()
 				UiTranslate(10, 0)
@@ -1034,7 +1048,6 @@ function tdmpModsSelector(isDownload, whatList)
 	UiPop()
 end
 
-
 function onLobbyInvite(inviter, lobbyId)
 	if invite then return end
 
@@ -1062,7 +1075,6 @@ function receivePacket(isHost, senderId, packet)
 		tdmpSelectedMap = tdmpMapInfo(packetDecoded.ids[1],packetDecoded.names[1])
 	end
 end
-
 
 function sendPacket(action, data) -- TODO: make sure we are not sending packets longer than 4092 characters
 	local packet = {}
@@ -1111,7 +1123,7 @@ function tdmpMapInfo(id, name)
 		map.id = id
 		map.name = name
 		map.isMod = true
-		map.download = true
+		map.toDownload = true
 		tdmpList[2].items[#tdmpList[2].items+1] = map
 		return map
 	else
@@ -1121,7 +1133,7 @@ function tdmpMapInfo(id, name)
 			if id == gSandbox[i].id then
 				local map = gSandbox[i]
 				map.isMod = false
-				map.download = false
+				map.toDownload = false
 				return map
 			end
 		end
@@ -1135,6 +1147,12 @@ function tdmpModsAction(action, ids, names)
 			local id = ids[i]
 			if tdmpList[3].all[id] then
 				DebugPrint("there is a mod: "..id)
+				local mod ={}
+				mod.id = id
+				-- mod.name = names[i]
+				mod.name = GetString("mods.available."..id..".listname")
+				mod.toDownload = false
+				tdmpList[2].items[#tdmpList[2].items+1] = mod
 			else
 				DebugPrint("need to download: "..id)
 				local mod ={}
@@ -1142,6 +1160,7 @@ function tdmpModsAction(action, ids, names)
 				mod.name = names[i]
 				mod.toDownload = true
 				tdmpList[2].items[#tdmpList[2].items+1] = mod
+
 			end
 		end
 	elseif action == 2 then
