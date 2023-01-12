@@ -85,13 +85,13 @@ do
 		for i, spawnable in ipairs(ListKeys("spawn." .. mod)) do
 			local p = "spawn." .. mod .. "." .. spawnable
 			local catPath = GetString(p)
-			local RAWpath = matchPath[mod] or ""
 
 			if catPath:find("TDMP Models") then
 				for i, xml in ipairs(ListKeys(p)) do
 					local path = GetString(p .. ".path")
-					local picPath = path:gsub("^.-:", "", 1):gsub("^MOD/", "", 1):gsub("%.xml$", "%.png", 1)
 					if not path:find("_ragdoll") and path:sub(1,13) ~= "builtin-tdmp:" then
+						local RAWpath = matchPath[mod] or ""
+						local picPath = path:gsub("^.-:", "", 1):gsub("^MOD/", "", 1):gsub("%.xml$", "%.png", 1)
 						local n = GetString(p)
 
 						local t = "Other"
