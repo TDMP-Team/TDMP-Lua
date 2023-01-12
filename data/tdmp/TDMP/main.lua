@@ -67,14 +67,30 @@ playersWithFlashlight = {}
 do
 	math.randomseed(TDMP_FixedTime()^2)
 	-- Auto-adding player models to models list
+	local regPath = "mods.available"
+	local keyList = ListKeys(regPath)
+	local matchPath = {}
+	for i, key in ipairs(keyList) do
+		local tagCheck = GetString(regPath.."."..key..".tags")
+		if tagCheck:find("Spawn") then
+			local pathCheck = GetString(regPath.."."..key..".path")
+			local pathPrefix = pathCheck:match("^(%u-:)/")
+			if pathPrefix then
+				matchPath[key] = "RAW:"..pathCheck
+			end
+		end
+	end
+
 	for i, mod in ipairs(ListKeys("spawn")) do
 		for i, spawnable in ipairs(ListKeys("spawn." .. mod)) do
 			local p = "spawn." .. mod .. "." .. spawnable
 			local catPath = GetString(p)
+			local RAWpath = matchPath[mod] or ""
 
 			if catPath:find("TDMP Models") then
 				for i, xml in ipairs(ListKeys(p)) do
 					local path = GetString(p .. ".path")
+					local picPath = path:gsub("^.-:", "", 1):gsub("^MOD/", "", 1):gsub("%.xml$", "%.png", 1)
 					if not path:find("_ragdoll") and path:sub(1,13) ~= "builtin-tdmp:" then
 						local n = GetString(p)
 
@@ -95,7 +111,7 @@ do
 							name = n,
 							xml = path,
 							xmlRag = path:sub(1, #path-4) .. "_ragdoll.xml",
-							img = "vox/player/custom.png",
+							img = RAWpath.."/"..picPath,
 							colR = r,
 							colG = g,
 							colB = b,
