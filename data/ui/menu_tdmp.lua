@@ -44,7 +44,7 @@ function init()
 	end
 
 	gMods = {}
-	for i=1,4 do
+	for i=1,5 do
 		gMods[i] = {}
 		gMods[i].items = {}
 		gMods[i].pos = 0
@@ -54,34 +54,35 @@ function init()
 		gMods[i].dragstarty = 0
 		gMods[i].isdragging = false
 	end
-	gMods[1].title = "Built-In"
-	gMods[2].title = "Subscribed"
-	gMods[3].title = "Local files"
+	gMods[1].title = "Mods with spawnable items"
+	gMods[2].title = "Global"
+	gMods[3].title = "Local mods"
+	-- gMods[4] -- all the mods
+	gMods[5].title = "Mod profiles"
 	gModSelected = ""
 	gModSelectedScale = 0
 
-	tdmpMapList = {}
-	tdmpMapList.items = {}
-	tdmpMapList.pos = 0
-	tdmpMapList.possmooth = 0
-	tdmpMapList.sort = 0
-	tdmpMapList.filter = 0
-	tdmpMapList.dragstarty = 0
-	tdmpMapList.isdragging = false
-	tdmpMapList.ids = {}
-	gMapSelected = 0
 
-	tdmpModsList = {}
-	tdmpModsList.ids = {}
-	tdmpModsList.toDownload = {}
-	tdmpModsList.toDownload.items = {}
-	tdmpModsList.toDownload.pos = 0
-	tdmpModsList.toDownload.possmooth = 0
-	tdmpModsList.toDownload.sort = 0
-	tdmpModsList.toDownload.filter = 0
-	tdmpModsList.toDownload.dragstarty = 0
-	tdmpModsList.toDownload.isdragging = false
-	tdmpModsList.toDownload.ids = {}
+	tdmpList = {}
+	for i=1,2 do
+		tdmpList[i] = {}
+		tdmpList[i].items = {}
+		tdmpList[i].pos = 0
+		tdmpList[i].possmooth = 0
+		tdmpList[i].sort = 0
+		tdmpList[i].filter = 0
+		tdmpList[i].dragstarty = 0
+		tdmpList[i].isdragging = false
+		tdmpList[i].ids = {}
+	end
+	tdmpList[3] = {} -- list of steam ids of mods
+	tdmpList[3].all = {}
+	tdmpList[3].state = {}
+
+	-- tdmpList[1] -- Maps
+	-- tdmpList[2] -- Mods to download
+
+	tdmpModListMode = 0
 
 	updateMods()
 	initSlideshow()
@@ -107,7 +108,7 @@ function init()
 
 	gDeploy = GetBool("game.deploy")
 
-	deactivateMods(true, true, true)
+	-- deactivateMods(true, true, true)
 end
 
 --------------------------------------- Background stuff
@@ -254,6 +255,32 @@ end
 
 local tdmpVersion = TDMP_Version()
 
+function updateModProfiles()
+	
+end
+
+function tdmpStartGame()
+	if not serverExists then
+		-- if amIhost then
+		if true then
+			if tdmpSelectedMap.isMod then
+				TDMP_Print(tdmpSelectedMap.id)
+				TDMP_StartLevel(true, tdmpSelectedMap.id)
+				Command("mods.play", tdmpSelectedMap.id)
+			else
+				TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
+				if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+					StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
+				else
+					UiSound("error.ogg")
+				end
+			end
+		end
+	else
+		TDMP_JoinLaunchedGame()
+	end
+end
+
 function drawTdmp()
 	local bw = 206
 	local bh = 40
@@ -262,10 +289,10 @@ function drawTdmp()
 	local local_w = UiWidth() - 200
 	local local_h = UiHeight() - 300
 
-	local inLobby = TDMP_IsLobbyValid()
-	local amIhost = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
-	-- local amIhost = false
-	local serverExists = TDMP_IsServerExists()
+	inLobby = TDMP_IsLobbyValid()
+	amIhost = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
+	-- amIhost = false
+	serverExists = TDMP_IsServerExists()
 	DebugWatch("host", amIhost)
 	DebugWatch("inlobby", inLobby)
 	DebugWatch("serverExists", serverExists)
@@ -446,34 +473,32 @@ function drawTdmp()
 					UiTranslate(56, 0)
 					-- DebugWatch("test:", UiGetTextSize("Mods:"))
 
+					UiColor(1,1,1,0.8)
 					UiButtonImageBox("common/box-solid-4.png", 4, 4, 1, 1, 1, 0.1)
 
-					-- local mode = GetInt("savegame.mod.tdmp.mods.mode.host")
-					-- if mode == 0 then
-					-- 	if UiTextButton("List", 120, 30) then
-					-- 		SetInt("savegame.mod.tdmp.mods.mode.host", 1)
-					-- 		-- updateMods()
-					-- 	end
-					-- elseif mode == 1 then
-					-- 	if UiTextButton("Profiles", 120, 30) then
-					-- 		SetInt("savegame.mod.tdmp.mods.mode.host", 0)
-					-- 		-- updateMods()
-					-- 	end
-					-- -- else
-					-- -- 	if UiTextButton("List + Profile", 120, 30) then
-					-- -- 		SetInt("savegame.mod.tdmp.mods.mode.host", 0)
-					-- -- 		-- updateMods()
-					-- -- 	end
-					-- end
-
-					-- UiTranslate(0, 30+10)
+					if tdmpModListMode == 0 then
+						if UiTextButton("All mods", 166, 26) then
+							tdmpModListMode = 1
+							-- updateMods()
+						end
+					elseif tdmpModListMode == 1 then
+						if UiTextButton("Global mods", 166, 26) then
+							tdmpModListMode = 2
+							-- updateMods()
+						end
+					else
+						if UiTextButton("Spawnable mods", 166, 26) then
+							tdmpModListMode = 0
+							-- updateMods()
+						end
+					end
 					
 				UiPop()
 
 				UiTranslate(0, 30+10)
 
 				if amIhost then 
-					tdmpModsSelector(false)
+					tdmpModsSelector(false, tdmpModListMode)
 				else
 				-- UiTranslate(0, 645-20-30-300+10)
 					tdmpModsSelector(true)
@@ -586,25 +611,7 @@ function drawTdmp()
 			if UiTextButton((serverExists and "Join") or "Start", bw, bh*1.5) and tdmpSelectedMap then
 				UiSound("common/click.ogg")
 
-				if not serverExists then
-					-- if amIhost then
-					if true then
-						if tdmpSelectedMap.isMod then
-							TDMP_Print(tdmpSelectedMap.id)
-							TDMP_StartLevel(true, tdmpSelectedMap.id)
-							Command("mods.play", tdmpSelectedMap.id)
-						else
-							TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
-							if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
-								StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
-							else
-								UiSound("error.ogg")
-							end
-						end
-					end
-				else
-					TDMP_JoinLaunchedGame()
-				end
+				tdmpStartGame()
 			end			
 		UiPop()
 		UiPush()
@@ -618,7 +625,9 @@ function drawTdmp()
 				-- sendPacket(3, "steam-2594544248")
 				-- sendPacket(1, {"steam-2594544248", "steam-2513151641", "steam-2906876609"})
 				
-				updateMaps()
+				-- updateMaps()
+
+				TDMP_SendLobbyPacket(json.encode({t = 69}))
 				-- TDMP_SendLobbyPacket(json.encode({t = 3, ids = {"steam-42069"}, names ={ "testNAME"}}))
 				-- Command("mods.refresh")
 				-- end
@@ -635,6 +644,7 @@ end
 
 function loadLevel(mod, a)
 	if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then return end
+	
 
 	if mod then
 		local modId = a
@@ -649,17 +659,18 @@ function loadLevel(mod, a)
 		Command("mods.play", a)
 	else
 		a = json.decode(a)
+		TDMP_Print("loadlevel:", a[1])
 		StartLevel(a[1], a[2], a[3])
 	end
 end
 
 function updateMaps()
-	tdmpMapList.ids = {}
-	tdmpMapList.items = {}
+	tdmpList[1].ids = {}
+	tdmpList[1].items = {}
 	TDMP_Print("Updating maps")
 	for i=1, #gSandbox do
-		tdmpMapList.items[i] = gSandbox[i]
-		tdmpMapList.items[i].isMod = false
+		tdmpList[1].items[i] = gSandbox[i]
+		tdmpList[1].items[i].isMod = false
 	end
 	local mods = ListKeys("mods.available")
 	local foundSelected = false
@@ -678,16 +689,17 @@ function updateMaps()
 		local iscontentmod = GetBool("mods.available."..mods[i]..".playable")
 		-- if iscontentmod then
 		if iscontentmod and (string.sub(mod.id,1,6) == "steam-")then
-			tdmpMapList.items[#tdmpMapList.items+1] = mod
-			tdmpMapList.ids[mod.id] = true
+			tdmpList[1].items[#tdmpList[1].items+1] = mod
+			tdmpList[1].ids[mod.id] = true
 			-- j = j + 1
 		end
 	end
+	DebugWatch("# modded maps", (#tdmpList[1].items - #gSandbox))
 end
 
 function tdmpMapSelector()
 
-	local list, w, h= tdmpMapList , 438-10-10-14, 645-20-30
+	local list, w, h= tdmpList[1] , 438-10-10-14, 645-20-30
 
 	local ret
 	local rmb_pushed = false
@@ -784,15 +796,15 @@ function tdmpMapSelector()
 				-- local id = list.items[i].id
 				if gMapSelected == i then
 					UiColor(1,1,1,0.1)
-					ret = tdmpMapList.items[i]
+					ret = tdmpList[1].items[i]
 				else
-					if mouseOver and UiIsMouseInRect(228, 75) then
+					if mouseOver and UiIsMouseInRect(w-10-10, 75) then
 						UiColor(0,0,0,0.1)
 						if InputPressed("lmb") then
 							UiSound("terminal/message-select.ogg")
 							gMapSelected = i
 
-							sendPacket(3, tdmpMapList.items[i].id)
+							sendPacket(3, tdmpList[1].items[i].id)
 						end
 					end
 				end
@@ -809,8 +821,8 @@ function tdmpMapSelector()
 						UiImage(list.items[i].image)
 					-- elseif (-list.pos) < i-1 then
 					else
-						UiPush()
 						local imgPath = "RAW:"..list.items[i].path .. "/preview.jpg"
+						UiPush()
 						UiScale(128/UiGetImageSize(imgPath))
 						UiImage("RAW:"..list.items[i].path .. "/preview.jpg")
 						-- DebugPrint(list.items[i].path .. "/preview.jpg")
@@ -825,9 +837,9 @@ function tdmpMapSelector()
 			UiTranslate(0, 75)
 		end
 
-		if not rmb_pushed and mouseOver and InputPressed("rmb") then
-			rmb_pushed = true
-		end
+		-- if not rmb_pushed and mouseOver and InputPressed("rmb") then
+		-- 	rmb_pushed = true
+		-- end
 	UiPop()
 	
 	-- UiModalEnd()
@@ -836,12 +848,18 @@ function tdmpMapSelector()
 	return ret
 end
 
-function tdmpModsSelector(isDownload)
+function tdmpModsSelector(isDownload, whatList)
 	local list = {}
+	whatList = whatList or 0
 	if isDownload then
-		list = tdmpModsList.toDownload
-	else
+		list = tdmpList[2]
+		DebugWatch("mods to DL", #tdmpList[2].items)
+	elseif whatList == 0 then
 		list = gMods[4]
+	elseif whatList == 1 then
+		list = gMods[2]
+	elseif whatList == 2 then
+		list = gMods[1]
 	end
 
 
@@ -932,6 +950,7 @@ function tdmpModsSelector(isDownload)
 		UiAlign("left")
 		UiColor(0.95,0.95,0.95,1)
 		for i=1, #list.items do
+
 			UiPush()
 				UiTranslate(10, -18)
 				UiColor(0,0,0,0)
@@ -956,18 +975,22 @@ function tdmpModsSelector(isDownload)
 			UiPop()
 
 			if not isDownload then
+
+				local modID = list.items[i].id
 				UiPush()
 				UiTranslate(-10, -18)
 				if UiIsMouseInRect(228, 22) and InputPressed("lmb") and mouseInBox then
-					if list.items[i].active then
+					if tdmpList[3].state[modID] then
 						-- Command("mods.deactivate", list.items[i].id)
+						tdmpList[3].state[modID] = false
 						sendPacket(2, list.items[i].id)
-						updateMods()
-						list.items[i].active = false
+						-- updateMods()
+						-- list.items[i].active = false
 					else
+						tdmpList[3].state[modID] = true
 						sendPacket(1, list.items[i].id)
 						-- updateMods()
-						list.items[i].active = true
+						-- list.items[i].active = true
 					end
 				end
 				UiPop()
@@ -976,7 +999,7 @@ function tdmpModsSelector(isDownload)
 					UiTranslate(2, -6)
 					UiAlign("center middle")
 					UiScale(0.5)
-					if list.items[i].active then
+					if tdmpList[3].state[modID] then
 						UiColor(1, 1, 0.5)
 						UiImage("menu/mod-active.png")
 					else
@@ -1023,16 +1046,18 @@ function receivePacket(isHost, senderId, packet)
 	local packetDecoded = json.decode(packet)
 	local action = packetDecoded.t
 	-- DebugPrint(packetDecoded.id)
-	-- DebugPrint(packetDecoded.t)
-	if action == 1 and isHost then
+	DebugPrint(packetDecoded.t)
+	DebugPrint(action)
+	if action == 1 and isHost and (not amIhost) then
 		tdmpModsAction(1, packetDecoded.ids, packetDecoded.names)
-	elseif action == 2 and isHost then
+	elseif action == 2 and isHost and (not amIhost) then
 		tdmpModsAction(2, packetDecoded.ids, packetDecoded.names)
-	elseif action == 3 and isHost then
+	elseif action == 3 and isHost and (not amIhost) then
+		TDMP_Print("Got map id:", packetDecoded.ids[1])
 		if not packetDecoded.names then packetDecoded.names = {""} end
 		if tdmpSelectedMap then 
 			removeMapFromDownloads()
-			tdmpSelectedMap.id = {} 
+			tdmpSelectedMap = {} 
 		end
 		tdmpSelectedMap = tdmpMapInfo(packetDecoded.ids[1],packetDecoded.names[1])
 	end
@@ -1070,7 +1095,7 @@ function tdmpMapInfo(id, name)
 	if string.sub(id,1,6) == "steam-" then
 		DebugPrint("got steam map")
 		updateMaps()
-		if tdmpMapList.ids[id] then
+		if tdmpList[1].ids[id] then
 			local map = {}
 			map.id = id
 			map.name = GetString("mods.available."..id..".listname")
@@ -1087,10 +1112,12 @@ function tdmpMapInfo(id, name)
 		map.name = name
 		map.isMod = true
 		map.download = true
-		tdmpModsList.toDownload.items[#tdmpModsList.toDownload.items+1] = map
+		tdmpList[2].items[#tdmpList[2].items+1] = map
 		return map
 	else
+		DebugPrint("gSandbox #: "..#gSandbox)
 		for i=1, #gSandbox do
+			TDMP_Print("gSandbox: ", gSandbox[i].id)
 			if id == gSandbox[i].id then
 				local map = gSandbox[i]
 				map.isMod = false
@@ -1106,7 +1133,7 @@ function tdmpModsAction(action, ids, names)
 	if action == 1 then
 		for i=1, #ids do
 			local id = ids[i]
-			if tdmpModsList.ids[id] then
+			if tdmpList[3].all[id] then
 				DebugPrint("there is a mod: "..id)
 			else
 				DebugPrint("need to download: "..id)
@@ -1114,19 +1141,23 @@ function tdmpModsAction(action, ids, names)
 				mod.id = id
 				mod.name = names[i]
 				mod.toDownload = true
-				tdmpModsList.toDownload.items[#tdmpModsList.toDownload.items+1] = mod
+				tdmpList[2].items[#tdmpList[2].items+1] = mod
 			end
 		end
 	elseif action == 2 then
-
+		local id = ids[1]
+			for i, v in ipairs(tdmpList[2].items) do
+				if tdmpList[2].items[i].id == id then
+					table.remove(tdmpList[2].items, i)
+				end
+			end
 	end
-	
 end
 
 function removeMapFromDownloads()
-	for i,v in ipairs(tdmpModsList.toDownload.items) do
-		if tdmpModsList.toDownload.items[i].id == tdmpSelectedMap.id then
-			table.remove(tdmpModsList.toDownload.items, i)
+	for i,v in ipairs(tdmpList[2].items) do
+		if tdmpList[2].items[i].id == tdmpSelectedMap.id then
+			table.remove(tdmpList[2].items, i)
 		end
 	end
 end
@@ -1345,7 +1376,7 @@ function updateMods()
 	gMods[2].items = {}
 	gMods[3].items = {}
 	gMods[4].items = {}
-	tdmpModsList.ids = {}
+	tdmpList[3].all = {}
 
 	local mods = ListKeys("mods.available")
 	local foundSelected = false
@@ -1362,37 +1393,20 @@ function updateMods()
 		mod.showbold = false;
 
 		local iscontentmod = GetBool("mods.available."..mods[i]..".playable")
-		if string.sub(mod.id,1,8) == "builtin-" then
-			if gMods[1].filter == 0 or (gMods[1].filter == 1 and not iscontentmod) or (gMods[1].filter == 2 and iscontentmod) then
+
+		if not (string.sub(mod.id,1,6) == "local-") then
+			if (not tdmpList[3].all[mod.id] and string.find(mod.tags, "Spawn")) then
 				gMods[1].items[#gMods[1].items+1] = mod
+				tdmpList[3].all[mod.id] = true
 			end
-		end
-		if string.sub(mod.id,1,6) == "steam-" then
-			mod.showbold = GetBool("mods.available."..mods[i]..".showbold")
-			if gMods[2].filter == 0 or (gMods[2].filter == 1 and not iscontentmod) or (gMods[2].filter == 2 and iscontentmod) then
+			if mod.override then
 				gMods[2].items[#gMods[2].items+1] = mod
+				tdmpList[3].all[mod.id] = true
 			end
-			if not iscontentmod then
-				gMods[4].items[#gMods[4].items+1] = mod
-				tdmpModsList.ids[mod.id] = true
-				-- DebugPrint(mod.id)
-			end
-			-- TDMP_Print(#gMods[4].items)
-			-- TDMP_Print(mods[i], GetString("mods.available."..mods[i]..".path"))
-			if (not tdmpModsList.ids[mod.id] and string.find(mod.tags, "Spawn")) then
-				gMods[4].items[#gMods[4].items+1] = mod
-				tdmpModsList.ids[mod.id] = true
-				-- DebugPrint(GetString("mods.available."..mods[i]..".path").."/spawn.txt")
-				-- TDMP_Print("id",mod.id)
-			end
-			-- TDMP_Print(#gMods[4].items)
+		else
+			gMods[3].items[#gMods[3].items+1] = mod
 		end
-		if string.sub(mod.id,1,6) == "local-" then
-			if gMods[3].filter == 0 or (gMods[3].filter == 1 and not iscontentmod) or (gMods[3].filter == 2 and iscontentmod) then
-				gMods[3].items[#gMods[3].items+1] = mod
-				
-			end
-		end
+
 		if gModSelected ~= "" and gModSelected == mods[i] then
 			foundSelected = true
 		end
@@ -1401,7 +1415,16 @@ function updateMods()
 		gModSelected = ""
 	end
 
-	for i=1,3 do
+	local templist = {}
+	for i, v in ipairs(gMods[1].items) do
+		templist[#templist+1] = gMods[1].items[i]
+	end
+	for i, v in ipairs(gMods[2].items) do
+		templist[#templist+1] = gMods[2].items[i]
+	end
+	gMods[4].items = templist
+
+	for i=1,4 do
 		if gMods[i].sort == 0 then
 			table.sort(gMods[i].items, function(a, b) return string.lower(a.name) < string.lower(b.name) end)
 		elseif gMods[i].sort == 1 then
@@ -1410,7 +1433,7 @@ function updateMods()
 			table.sort(gMods[i].items, function(a, b) return a.subscribetime > b.subscribetime end)
 		end
 	end
-	-- table.sort(gMods[4].items, function(a, b) return string.lower(a.name) < string.lower(b.name) end)
+
 end
 
 function selectMod(mod)
@@ -1419,6 +1442,13 @@ function selectMod(mod)
 	if mod ~= "" then
 		Command("mods.updateselecttime", gModSelected)
 	Command("game.selectmod", gModSelected)
+	end
+end
+
+function deleteModCallback()
+	if yesNoPopup.item ~= "" then
+		Command("mods.delete", yesNoPopup.item)
+		updateMods()
 	end
 end
 
@@ -1538,13 +1568,6 @@ function contextMenu(sel_mod)
 	UiModalEnd()
 
 	return open
-end
-
-function deleteModCallback()
-	if yesNoPopup.item ~= "" then
-		Command("mods.delete", yesNoPopup.item)
-		updateMods()
-	end
 end
 
 function contextMenuSubscribed(sel_mod)
@@ -1698,7 +1721,7 @@ end
 function drawCreate(scale)
 	local open = true
 	UiPush()
-		local w = 890
+		local w = 890 + 290
 		local h = 604 + gModSelectedScale*270
 		UiTranslate(UiCenter(), UiMiddle())
 		UiScale(scale*gUiScaleUpFactor)
@@ -1729,9 +1752,9 @@ function drawCreate(scale)
 				UiFont("regular.ttf", 22)
 				UiTranslate(UiCenter(), 80)
 				UiAlign("center")
-				UiWordWrap(700)
+				UiWordWrap(700+290)
 				UiColor(0.8, 0.8, 0.8)
-				UiText("Create your own mods using Lua scripting and the free voxel modeling program MagicaVoxel. We have provided example mods that you can modify or replace with your own creations. Find out more on our web page:", true)
+				UiText("Only mods from steam workshop and builtin mods are avaliable. You can enable local mods in option in TDMP tab.", true)
 				UiTranslate(0, 2)
 				UiFont("bold.ttf", 22)
 				UiColor(1, 0.95, .7)
@@ -1750,7 +1773,8 @@ function drawCreate(scale)
 
 			UiTranslate(30, 220)
 			UiPush()
-			for i=1,3 do
+			for i=1,4 do
+				if i == 4 then i = 5 end
 				UiPush()
 					UiFont("bold.ttf", 22)
 					UiAlign("left")
