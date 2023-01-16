@@ -259,26 +259,44 @@ function updateModProfiles()
 	
 end
 
-function tdmpStartGame()
-	if not serverExists then
-		-- if amIhost then
-		if true then
-			if tdmpSelectedMap.isMod then
-				TDMP_Print(tdmpSelectedMap.id)
-				TDMP_StartLevel(true, tdmpSelectedMap.id)
-				Command("mods.play", tdmpSelectedMap.id)
-			else
-				TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
-				if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
-					StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
-				else
-					UiSound("error.ogg")
-				end
-			end
+function tdmpEnableMods()
+	DebugPrint("got mod enable func")
+	deactivateMods(true, true, true)
+
+	for i, v in pairs(tdmpList[3].state) do
+		DebugPrint(i)
+		if tdmpList[3].state[i] then
+			SetBool("mods.available."..i..".active", true)
+			Command("mods.activate", i)
+		-- else
+		-- 	SetBool("mods.available."..i..".active", false)
+		-- 	Command("mods.deactivate", i)
 		end
-	else
-		TDMP_JoinLaunchedGame()
 	end
+end
+
+function tdmpStartGame()
+	tdmpEnableMods()
+
+	-- if not serverExists then
+	-- 	-- if amIhost then
+	-- 	if true then
+	-- 		if tdmpSelectedMap.isMod then
+	-- 			TDMP_Print(tdmpSelectedMap.id)
+	-- 			TDMP_StartLevel(true, tdmpSelectedMap.id)
+	-- 			Command("mods.play", tdmpSelectedMap.id)
+	-- 		else
+	-- 			TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
+	-- 			if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+	-- 				StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
+	-- 			else
+	-- 				UiSound("error.ogg")
+	-- 			end
+	-- 		end
+	-- 	end
+	-- else
+	-- 	TDMP_JoinLaunchedGame()
+	-- end
 end
 
 function drawTdmp()
@@ -459,7 +477,7 @@ function drawTdmp()
 			-- UiAlign("top centre")
 			UiWindow(418, 500-20, true)
 
-			UiPush()
+			-- UiPush()
 				UiPush()
 					UiTranslate(0, 20)
 					UiFont("regular.ttf", 22)
@@ -493,19 +511,19 @@ function drawTdmp()
 					end
 
 				else 
-					UiText("Mods requested by host:") end
+					UiText("Mods enabled by host:") end
 					
 				UiPop()
 
 				UiTranslate(0, 30+10)
 
 				if amIhost then 
-					tdmpModsSelector(false, tdmpModListMode)
+					scrollableList(2, 250, 645-20-30-300)
 				else
 				-- UiTranslate(0, 645-20-30-300+10)
-					tdmpModsSelector(true)
+					scrollableList(3, 250, 645-20-30-300)
 				end
-			UiPop()
+			-- UiPop()
 
 		UiPop()
 
@@ -533,7 +551,7 @@ function drawTdmp()
 			UiTranslate(0,30)
 
 			if amIhost then
-				tdmpSelectedMap = tdmpMapSelector()
+				tdmpSelectedMap = scrollableList(1, 438-10-10-14, 645-20-30)
 			elseif tdmpSelectedMap and (tdmpSelectedMap.toDownload == false) then
 				UiPush()
 					UiTranslate(0, 10)
@@ -627,9 +645,9 @@ function drawTdmp()
 				-- sendPacket(3, "steam-2594544248")
 				-- sendPacket(1, {"steam-2594544248", "steam-2513151641", "steam-2906876609"})
 				
-				-- updateMaps()
+				updateMods()
 
-				TDMP_SendLobbyPacket(json.encode({t = 69}))
+				-- TDMP_SendLobbyPacket(json.encode({t = 69}))
 				-- TDMP_SendLobbyPacket(json.encode({t = 3, ids = {"steam-42069"}, names ={ "testNAME"}}))
 				-- Command("mods.refresh")
 				-- end
@@ -699,355 +717,6 @@ function updateMaps()
 	DebugWatch("# modded maps", (#tdmpList[1].items - #gSandbox))
 end
 
-function tdmpMapSelector()
-
-	local list, w, h= tdmpList[1] , 438-10-10-14, 645-20-30
-
-	local ret
-	local rmb_pushed = false
-	if list.isdragging and InputReleased("lmb") then
-		list.isdragging = false
-	end
-	-- UiModalBegin()
-		UiPush()
-		UiAlign("top left")
-		UiFont("regular.ttf", 22)
-
-		local itemsInView = math.floor(h/75)
-		local mouseOver = UiIsMouseInRect(w+12, h)
-		if mouseOver then
-			list.pos = list.pos + InputValue("mousewheel")
-			if list.pos > 0 then
-				list.pos = 0
-			elseif list.pos < - (#list.items - itemsInView) then
-				list.pos = - (#list.items - itemsInView)
-			end
-		end
-		if not UiReceivesInput() then
-			mouseOver = false
-		end
-
-		
-		local someStupidFractionThatWhasMessingWithScroll = itemsInView/h
-		if #list.items > itemsInView then
-			local scrollCount = (#list.items-itemsInView)
-			if scrollCount < 0 then scrollCount = 0 end
-			
-			local frac = itemsInView / #list.items
-			local pos = -list.possmooth / #list.items
-			if list.isdragging then
-				local posx, posy = UiGetMousePos()
-				local dy = someStupidFractionThatWhasMessingWithScroll * (posy - list.dragstarty)
-				list.pos = -dy / frac
-			end
-			DebugWatch("map pos", list.pos)
-			DebugWatch("#list.items", #list.items)
-			UiPush()
-				UiTranslate(w, 0)
-				UiColor(1,1,1, 0.07)
-				UiImageBox("common/box-solid-4.png", 14, h, 4, 4)
-				UiColor(1,1,1, 0.2)
-
-				local bar_posy = 2 + pos*(h-4)
-				local bar_sizey = (h-4)*frac
-				UiPush()
-					UiTranslate(2,2)
-					if bar_posy > 2 and UiIsMouseInRect(8, bar_posy-2) and InputPressed("lmb") then
-						list.pos = list.pos + frac * #list.items
-					end
-					local h2 = h - 4 - bar_sizey - bar_posy
-					UiTranslate(0,bar_posy + bar_sizey)
-					if h2 > 0 and UiIsMouseInRect(10, h2) and InputPressed("lmb") then
-						list.pos = list.pos - frac * #list.items
-					end
-				UiPop()
-
-				UiTranslate(2,bar_posy)
-				UiImageBox("common/box-solid-4.png", 10, bar_sizey, 4, 4)
-				--UiRect(10, bar_sizey)
-				if UiIsMouseInRect(10, bar_sizey) and InputPressed("lmb") then
-					local posx, posy = UiGetMousePos()
-					list.dragstarty = posy
-					list.isdragging = true
-				end
-			UiPop()
-			list.pos = clamp(list.pos, -scrollCount, 0)
-		else
-			list.pos = 0
-			list.possmooth = 0
-		end
-
-		UiWindow(w, h, true)
-		UiColor(1,1,1,0.07)
-		UiImageBox("common/box-solid-6.png", w, h, 6, 6)
-
-		UiTranslate(10, 24)
-		if list.isdragging then
-			list.possmooth = list.pos
-		else
-			list.possmooth = list.possmooth + (list.pos-list.possmooth) * 10 * GetTimeStep()
-		end
-		UiTranslate(0, list.possmooth*75)
-
-		UiAlign("left")
-		UiColor(0.95,0.95,0.95,1)
-		for i=1, #list.items do
-			UiPush()
-				UiTranslate(0, -18)
-				UiColor(0,0,0,0)
-				-- local id = list.items[i].id
-				if gMapSelected == i then
-					UiColor(1,1,1,0.1)
-					ret = tdmpList[1].items[i]
-				else
-					if mouseOver and UiIsMouseInRect(w-10-10, 75) then
-						UiColor(0,0,0,0.1)
-						if InputPressed("lmb") then
-							UiSound("terminal/message-select.ogg")
-							gMapSelected = i
-
-							sendPacket(3, tdmpList[1].items[i].id)
-						end
-					end
-				end
-				UiRect(w-10-10, 75)
-			UiPop()
-
-			UiPush()
-				UiAlign("left middle")
-				UiPush()
-					UiTranslate(10,75/2-18)
-					
-					UiScale(0.5)
-					if not list.items[i].isMod then
-						UiImage(list.items[i].image)
-					-- elseif (-list.pos) < i-1 then
-					else
-						local imgPath = "RAW:"..list.items[i].path .. "/preview.jpg"
-						UiPush()
-						UiScale(128/UiGetImageSize(imgPath))
-						UiImage("RAW:"..list.items[i].path .. "/preview.jpg")
-						-- DebugPrint(list.items[i].path .. "/preview.jpg")
-						UiPop()
-					end
-				UiPop()
-
-				UiTranslate(75+10, 75/2-18)
-
-				UiText(list.items[i].name)
-			UiPop()
-			UiTranslate(0, 75)
-		end
-
-		-- if not rmb_pushed and mouseOver and InputPressed("rmb") then
-		-- 	rmb_pushed = true
-		-- end
-	UiPop()
-	
-	-- UiModalEnd()
-
-	-- return ret, rmb_pushed
-	return ret
-end
-
-function tdmpModsSelector(isDownload, whatList)
-	local list = {}
-	whatList = whatList or 0
-	if isDownload then
-		list = tdmpList[2]
-		-- DebugWatch("mods to DL", #tdmpList[2].items)
-	elseif whatList == 0 then
-		list = gMods[4]
-	elseif whatList == 1 then
-		list = gMods[2]
-	elseif whatList == 2 then
-		list = gMods[1]
-	end
-
-
-	-- local list, w, h= gMods[2] , 438-10-10-14-200, 645-20-30-300
-	local w, h= 250, 645-20-30-300
-
-	local ret = ""
-	local rmb_pushed = false
-	if list.isdragging and InputReleased("lmb") then
-		list.isdragging = false
-	end
-	UiPush()
-		UiAlign("top left")
-		UiFont("regular.ttf", 22)
-
-		local mouseOver = UiIsMouseInRect(w+12, h)
-		if mouseOver then
-			list.pos = list.pos + InputValue("mousewheel")
-			if list.pos > 0 then
-				list.pos = 0
-			end
-		end
-		if not UiReceivesInput() then
-			mouseOver = false
-		end
-
-		local itemsInView = math.floor(h/UiFontHeight())
-		if #list.items > itemsInView then
-			local scrollCount = (#list.items-itemsInView)
-			if scrollCount < 0 then scrollCount = 0 end
-
-			local frac = itemsInView / #list.items
-			local pos = -list.possmooth / #list.items
-			if list.isdragging then
-				local posx, posy = UiGetMousePos()
-				local dy = 0.0445 * (posy - list.dragstarty)
-				list.pos = -dy / frac
-			end
-
-			UiPush()
-				UiTranslate(w, 0)
-				UiColor(1,1,1, 0.07)
-				UiImageBox("common/box-solid-4.png", 14, h, 4, 4)
-				UiColor(1,1,1, 0.2)
-
-				local bar_posy = 2 + pos*(h-4)
-				local bar_sizey = (h-4)*frac
-				UiPush()
-					UiTranslate(2,2)
-					if bar_posy > 2 and UiIsMouseInRect(8, bar_posy-2) and InputPressed("lmb") then
-						list.pos = list.pos + frac * #list.items
-					end
-					local h2 = h - 4 - bar_sizey - bar_posy
-					UiTranslate(0,bar_posy + bar_sizey)
-					if h2 > 0 and UiIsMouseInRect(10, h2) and InputPressed("lmb") then
-						list.pos = list.pos - frac * #list.items
-					end
-				UiPop()
-
-				UiTranslate(2,bar_posy)
-				UiImageBox("common/box-solid-4.png", 10, bar_sizey, 4, 4)
-				--UiRect(10, bar_sizey)
-				if UiIsMouseInRect(10, bar_sizey) and InputPressed("lmb") then
-					local posx, posy = UiGetMousePos()
-					list.dragstarty = posy
-					list.isdragging = true
-				end
-			UiPop()
-			list.pos = clamp(list.pos, -scrollCount, 0)
-		else
-			list.pos = 0
-			list.possmooth = 0
-		end
-
-		UiWindow(w, h, true)
-		local mouseInBox = UiIsMouseInRect(w, h)
-		UiColor(1,1,1,0.07)
-		UiImageBox("common/box-solid-6.png", w, h, 6, 6)
-
-		UiTranslate(10, 24)
-		if list.isdragging then
-			list.possmooth = list.pos
-		else
-			list.possmooth = list.possmooth + (list.pos-list.possmooth) * 10 * GetTimeStep()
-		end
-		UiTranslate(0, list.possmooth*22)
-
-		UiAlign("left")
-		UiColor(0.95,0.95,0.95,1)
-		for i=1, #list.items do
-
-			UiPush()
-				UiTranslate(10, -18)
-				UiColor(0,0,0,0)
-				local id = list.items[i].id
-				if gModSelected == id then
-					UiColor(1,1,1,0.1)
-				else
-					if mouseOver and UiIsMouseInRect(228, 22) then
-						UiColor(0.7,0.7,0.7,0.1)
-						if InputPressed("lmb") then
-							UiSound("terminal/message-select.ogg")
-							ret = id
-						end
-					end
-				end
-				if mouseOver and UiIsMouseInRect(228, 22) and InputPressed("rmb") then
-					ret = id
-					rmb_sel = id;
-					rmb_pushed = true
-				end
-				UiRect(w, 22)
-			UiPop()
-
-			if not isDownload then
-
-				local modID = list.items[i].id
-				UiPush()
-				UiTranslate(-10, -18)
-				if UiIsMouseInRect(228, 22) and InputPressed("lmb") and mouseInBox then
-					if tdmpList[3].state[modID] then
-						-- Command("mods.deactivate", list.items[i].id)
-						tdmpList[3].state[modID] = false
-						sendPacket(2, list.items[i].id)
-						-- updateMods()
-						-- list.items[i].active = false
-					else
-						tdmpList[3].state[modID] = true
-						sendPacket(1, list.items[i].id)
-						-- updateMods()
-						-- list.items[i].active = true
-					end
-				end
-				UiPop()
-
-				UiPush()
-					UiTranslate(2, -6)
-					UiAlign("center middle")
-					UiScale(0.5)
-					if tdmpList[3].state[modID] then
-						UiColor(1, 1, 0.5)
-						UiImage("menu/mod-active.png")
-					else
-						UiImage("menu/mod-inactive.png")
-					end
-				UiPop()
-				else
-					UiPush()
-					UiTranslate(2, -6)
-					UiAlign("center middle")
-					UiScale(0.5)
-					if not list.items[i].toDownload then
-						UiColor(1, 1, 0.5)
-						UiImage("menu/mod-active.png")
-					else
-						UiImage("menu/mod-inactive.png")
-					end
-				UiPop()
-			end
-			UiPush()
-				UiTranslate(10, 0)
-				-- if issubscribedlist and list.items[i].showbold then
-				-- 	UiFont("bold.ttf", 20)
-				-- end
-				if not isDownload then
-					local supportedByMod = list.items[i].description:lower():find("tdmp support is included") or list.items[i].name:find("%[TDMP%]") or list.items[i].name == "TDMP"
-					if list.items[i].tags:find("Global") and not supportedByMod then
-						UiColor(1,.7,.7,1)
-					elseif not supportedByMod then
-						UiColor(1,1,1,1)
-					else
-						UiColor(.7,1,.7,1)
-					end
-				end
-				UiText(list.items[i].name)
-			UiPop()
-			UiTranslate(0, 22)
-		end
-
-		-- if not rmb_pushed and mouseOver and InputPressed("rmb") then
-		-- 	rmb_pushed = true
-		-- end
-
-	UiPop()
-end
-
 function onLobbyInvite(inviter, lobbyId)
 	if invite then return end
 
@@ -1085,7 +754,7 @@ function sendPacket(action, data) -- TODO: make sure we are not sending packets 
 		if action == 1 then
 			packet.names = {}
 			for i,v in ipairs(data) do
-				packet.names[i] = GetString("mods.available."..v..".listname")
+				packet.names[#packet.names+1] = GetString("mods.available."..v..".listname")
 			end
 		elseif action == 3 then
 			if string.sub(data[1],1,6) == "steam-" then
@@ -1180,6 +849,259 @@ function removeMapFromDownloads()
 		end
 	end
 end
+
+
+function scrollableList(listType,  w, h)
+	-- types: - 1 - map select (host)
+	--        - 2 - list of all mods (host)
+	--        - 3 - list of enabled mods (client)
+	--        - 4 - 
+
+	if listType == 1 then
+		list =  tdmpList[1]
+	elseif listType == 2 then
+		if tdmpModListMode == 0 then
+			list = gMods[4]
+		elseif tdmpModListMode == 1 then
+			list = gMods[2]
+		elseif tdmpModListMode == 2 then
+			list = gMods[1]
+		end
+	elseif listType == 3 then
+		list = tdmpList[2]
+	elseif listType == 4 then
+
+	else
+		return
+	end
+
+	local ret = ""
+	local rmb_pushed = false
+	if list.isdragging and InputReleased("lmb") then
+		list.isdragging = false
+	end
+	UiPush()
+		UiAlign("top left")
+		UiFont("regular.ttf", 22)
+		
+		local mouseOver = UiIsMouseInRect(w+12, h)
+		if mouseOver then
+			list.pos = list.pos + InputValue("mousewheel")
+			if list.pos > 0 then
+				list.pos = 0
+			end
+		end
+		if not UiReceivesInput() then
+			mouseOver = false
+		end
+
+		local itemHeight
+		if listType == 1 then
+			itemHeight = 75
+		else
+			itemHeight = UiFontHeight()
+		end	
+		local itemsInView = math.floor(h/itemHeight)
+		local someStupidFractionThatWhasMessingWithScroll = itemsInView/h
+		if #list.items > itemsInView then
+			local scrollCount = (#list.items-itemsInView)
+			if scrollCount < 0 then scrollCount = 0 end
+
+			local frac = itemsInView / #list.items
+			local pos = -list.possmooth / #list.items
+			if list.isdragging then
+				local posx, posy = UiGetMousePos()
+				local dy = someStupidFractionThatWhasMessingWithScroll * (posy - list.dragstarty)
+				list.pos = -dy / frac
+			end
+
+			UiPush()
+				UiTranslate(w, 0)
+				UiColor(1,1,1, 0.07)
+				UiImageBox("common/box-solid-4.png", 14, h, 4, 4)
+				UiColor(1,1,1, 0.2)
+
+				local bar_posy = 2 + pos*(h-4)
+				local bar_sizey = (h-4)*frac
+				UiPush()
+					UiTranslate(2,2)
+					if bar_posy > 2 and UiIsMouseInRect(8, bar_posy-2) and InputPressed("lmb") then
+						list.pos = list.pos + frac * #list.items
+					end
+					local h2 = h - 4 - bar_sizey - bar_posy
+					UiTranslate(0,bar_posy + bar_sizey)
+					if h2 > 0 and UiIsMouseInRect(10, h2) and InputPressed("lmb") then
+						list.pos = list.pos - frac * #list.items
+					end
+				UiPop()
+
+				UiTranslate(2,bar_posy)
+				UiImageBox("common/box-solid-4.png", 10, bar_sizey, 4, 4)
+				--UiRect(10, bar_sizey)
+				if UiIsMouseInRect(10, bar_sizey) and InputPressed("lmb") then
+					local posx, posy = UiGetMousePos()
+					list.dragstarty = posy
+					list.isdragging = true
+				end
+			UiPop()
+			list.pos = clamp(list.pos, -scrollCount, 0)
+		else
+			list.pos = 0
+			list.possmooth = 0
+		end
+
+		local mouseInBox = UiIsMouseInRect(w, h)
+
+		UiWindow(w, h, true)
+		UiColor(1,1,1,0.07)
+		UiImageBox("common/box-solid-6.png", w, h, 6, 6)
+
+		UiTranslate(10, 24)
+		if list.isdragging then
+			list.possmooth = list.pos
+		else
+			list.possmooth = list.possmooth + (list.pos-list.possmooth) * 10 * GetTimeStep()
+		end
+		UiTranslate(0, list.possmooth*22)
+
+		UiAlign("left")
+		UiColor(0.95,0.95,0.95,1)
+		for i=1, #list.items do
+
+			if listType == 1 then
+					UiPush()
+					UiTranslate(0, -18)
+					UiColor(0,0,0,0)
+					-- local id = list.items[i].id
+					if gMapSelected == i then
+						UiColor(1,1,1,0.1)
+						ret = tdmpList[1].items[i]
+					else
+						if mouseOver and UiIsMouseInRect(w-10-10, 75) then
+							UiColor(0,0,0,0.1)
+							if InputPressed("lmb") then
+								UiSound("terminal/message-select.ogg")
+								gMapSelected = i
+
+								sendPacket(3, tdmpList[1].items[i].id)
+							end
+						end
+					end
+					UiRect(w-10-10, 75)
+				UiPop()
+
+				UiPush()
+					UiAlign("left middle")
+					UiPush()
+						UiTranslate(10,75/2-18)
+
+						UiScale(0.5)
+						if not list.items[i].isMod then
+							UiImage(list.items[i].image)
+						-- elseif (-list.pos) < i-1 then
+						else
+							local imgPath = "RAW:"..list.items[i].path .. "/preview.jpg"
+							UiPush()
+							UiScale(128/UiGetImageSize(imgPath))
+							UiImage("RAW:"..list.items[i].path .. "/preview.jpg")
+							-- DebugPrint(list.items[i].path .. "/preview.jpg")
+							UiPop()
+						end
+					UiPop()
+
+					UiTranslate(75+10, 75/2-18)
+
+					UiText(list.items[i].name)
+				UiPop()
+				UiTranslate(0, 75)
+			else
+				UiPush()
+					UiTranslate(0, -18)
+					UiColor(0,0,0,0)
+					local id = list.items[i].id
+					if gModSelected == id then
+						UiColor(1,1,1,0.1)
+					else
+						if mouseOver and UiIsMouseInRect(w-22, 22) then
+							UiColor(0,0,0,0.1)
+							if InputPressed("lmb") then
+								UiSound("terminal/message-select.ogg")
+								ret = id
+							end
+						end
+					end
+					-- if mouseOver and UiIsMouseInRect(228, 22) and InputPressed("rmb") then
+					-- 	ret = id
+					-- 	rmb_sel = id;
+					-- 	rmb_pushed = true
+					-- end
+					UiRect(w, itemHeight)
+				UiPop()
+
+				if listType == 2 then
+					
+					local modID = list.items[i].id
+					UiPush()
+					UiTranslate(-10, -18)
+					if UiIsMouseInRect(228, 22) and InputPressed("lmb") and mouseInBox then
+					-- if UiIsMouseInRect(228, 22) and InputPressed("lmb") then
+						if tdmpList[3].state[modID] then
+							-- Command("mods.deactivate", list.items[i].id)
+							tdmpList[3].state[modID] = false
+							DebugPrint(modID)
+							sendPacket(2, list.items[i].id)
+							-- updateMods()
+							-- list.items[i].active = false
+						else
+							tdmpList[3].state[modID] = true
+							sendPacket(1, list.items[i].id)
+							-- updateMods()
+							-- list.items[i].active = true
+						end
+					end
+					UiPop()
+
+					UiPush()
+						UiTranslate(2, -6)
+						UiAlign("center middle")
+						UiScale(0.5)
+						if tdmpList[3].state[modID] then
+							UiColor(1, 1, 0.5)
+							UiImage("menu/mod-active.png")
+						else
+							UiImage("menu/mod-inactive.png")
+						end
+					UiPop()
+				end
+				UiPush()
+					UiTranslate(10, 0)
+					-- if issubscribedlist and list.items[i].showbold then
+					-- 	UiFont("bold.ttf", 20)
+					-- end
+
+					-- local supportedByMod = list.items[i].description:lower():find("tdmp support is included") or list.items[i].name:find("%[TDMP%]") or list.items[i].name == "TDMP"
+					-- if list.items[i].tags:find("Global") and not supportedByMod then
+					-- 	UiColor(1,.7,.7,1)
+					-- elseif not supportedByMod then
+					-- 	UiColor(1,1,1,1)
+					-- else
+					-- 	UiColor(.7,1,.7,1)
+					-- end
+					UiText(list.items[i].name)
+				UiPop()
+				UiTranslate(0, itemHeight)
+			end
+		end
+
+		-- if not rmb_pushed and mouseOver and InputPressed("rmb") then
+		-- 	rmb_pushed = true
+		-- end
+
+	UiPop()
+
+	return ret
+end
+
 
 --------------------------------------- Mods Menu stuff (edited)
 
@@ -2046,6 +1968,7 @@ function drawCreate(scale)
 								else
 									if UiTextButton("Disabled", 200, 40) then
 										Command("mods.activate", gModSelected)
+										DebugPrint(gModSelected)
 										updateMods()
 									end
 									UiTranslate(-60, 0)
