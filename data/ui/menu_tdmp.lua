@@ -728,8 +728,8 @@ function receivePacket(isHost, senderId, packet)
 	local packetDecoded = json.decode(packet)
 	local action = packetDecoded.t
 	-- DebugPrint(packetDecoded.id)
-	DebugPrint(packetDecoded.t)
-	DebugPrint(action)
+	-- DebugPrint(packetDecoded.t)
+	-- DebugPrint(action)
 	if action == 1 and isHost and (not amIhost) then
 		tdmpModsAction(1, packetDecoded.ids, packetDecoded.names)
 	elseif action == 2 and isHost and (not amIhost) then
@@ -1048,7 +1048,7 @@ function scrollableList(listType,  w, h)
 						if tdmpList[3].state[modID] then
 							-- Command("mods.deactivate", list.items[i].id)
 							tdmpList[3].state[modID] = false
-							DebugPrint(modID)
+							-- DebugPrint(modID)
 							sendPacket(2, list.items[i].id)
 							-- updateMods()
 							-- list.items[i].active = false
@@ -1060,33 +1060,34 @@ function scrollableList(listType,  w, h)
 						end
 					end
 					UiPop()
-
+				end
+					
 					UiPush()
 						UiTranslate(2, -6)
 						UiAlign("center middle")
 						UiScale(0.5)
-						if tdmpList[3].state[modID] then
+						if (listType == 2 and tdmpList[3].state[list.items[i].id]) or (listType == 3 and tdmpList[2].items[i].toDownload) then
 							UiColor(1, 1, 0.5)
 							UiImage("menu/mod-active.png")
 						else
 							UiImage("menu/mod-inactive.png")
 						end
 					UiPop()
-				end
 				UiPush()
 					UiTranslate(10, 0)
 					-- if issubscribedlist and list.items[i].showbold then
 					-- 	UiFont("bold.ttf", 20)
 					-- end
-
-					-- local supportedByMod = list.items[i].description:lower():find("tdmp support is included") or list.items[i].name:find("%[TDMP%]") or list.items[i].name == "TDMP"
-					-- if list.items[i].tags:find("Global") and not supportedByMod then
-					-- 	UiColor(1,.7,.7,1)
-					-- elseif not supportedByMod then
-					-- 	UiColor(1,1,1,1)
-					-- else
-					-- 	UiColor(.7,1,.7,1)
-					-- end
+					if listType == 2 then
+						local supportedByMod = list.items[i].description:lower():find("tdmp support is included") or list.items[i].name:find("%[TDMP%]") or list.items[i].name == "TDMP"
+						if list.items[i].tags:find("Global") and not supportedByMod then
+							UiColor(1,.7,.7,1)
+						elseif not supportedByMod then
+							UiColor(1,1,1,1)
+						else
+							UiColor(.7,1,.7,1)
+						end
+					end
 					UiText(list.items[i].name)
 				UiPop()
 				UiTranslate(0, itemHeight)
