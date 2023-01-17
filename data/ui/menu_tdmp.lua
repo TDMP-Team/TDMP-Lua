@@ -25,9 +25,9 @@ gActivations = 0
 local invite
 promo_full_initiated = false
 
-local function startsWith(str, start)
-	return string.sub(str, 1, string.len(start)) == start
-end
+-- local function startsWith(str, start)
+-- 	return string.sub(str, 1, string.len(start)) == start
+-- end
 
 downloadingMod = 0
 loadOnModMap = nil
@@ -78,6 +78,8 @@ function init()
 	tdmpList[3] = {} -- list of steam ids of mods
 	tdmpList[3].all = {}
 	tdmpList[3].state = {}
+	tdmpList[3].type = {} -- 1: spawnables
+						  -- 2: global
 
 	-- tdmpList[1] -- Maps
 	-- tdmpList[2] -- Mods in session
@@ -262,12 +264,16 @@ end
 function tdmpEnableMods()
 	DebugPrint("got mod enable func")
 	deactivateMods(true, true, true)
+	ClearKey("savegame.mod.tdmp.spawnables")
 
 	for i, v in pairs(tdmpList[3].state) do
-		DebugPrint(i)
-		if tdmpList[3].state[i] then
-			SetBool("mods.available."..i..".active", true)
+		-- DebugPrint(i)
+		if tdmpList[3].state[i] and tdmpList[3].type[i] == 2 then
+			-- SetBool("mods.available."..i..".active", true)
 			Command("mods.activate", i)
+			DebugPrint("Enabling: "..i)
+		elseif tdmpList[3].state[i] and tdmpList[3].type[i] == 1 then
+		SetBool("savegame.mod.tdmp.spawnables."..i, true)
 		-- else
 		-- 	SetBool("mods.available."..i..".active", false)
 		-- 	Command("mods.deactivate", i)
@@ -278,25 +284,25 @@ end
 function tdmpStartGame()
 	tdmpEnableMods()
 
-	-- if not serverExists then
-	-- 	-- if amIhost then
-	-- 	if true then
-	-- 		if tdmpSelectedMap.isMod then
-	-- 			TDMP_Print(tdmpSelectedMap.id)
-	-- 			TDMP_StartLevel(true, tdmpSelectedMap.id)
-	-- 			Command("mods.play", tdmpSelectedMap.id)
-	-- 		else
-	-- 			TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
-	-- 			if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
-	-- 				StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
-	-- 			else
-	-- 				UiSound("error.ogg")
-	-- 			end
-	-- 		end
-	-- 	end
-	-- else
-	-- 	TDMP_JoinLaunchedGame()
-	-- end
+	if not serverExists then
+		-- if amIhost then
+		if true then
+			if tdmpSelectedMap.isMod then
+				TDMP_Print(tdmpSelectedMap.id)
+				TDMP_StartLevel(true, tdmpSelectedMap.id)
+				Command("mods.play", tdmpSelectedMap.id)
+			else
+				TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
+				if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+					StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
+				else
+					UiSound("error.ogg")
+				end
+			end
+		end
+	else
+		TDMP_JoinLaunchedGame()
+	end
 end
 
 function drawTdmp()
@@ -315,58 +321,6 @@ function drawTdmp()
 	DebugWatch("inlobby", inLobby)
 	DebugWatch("serverExists", serverExists)
 	
-
-	if invite then
-		local left = invite.die - TDMP_FixedTime()
-		local timeout = left <= 0
-
-		if timeout and invite.canBeDeleted then
-			invite = nil
-		else
-			invite.animation = math.min(1, invite.animation + (timeout and -.05 or .05))
-			if timeout and invite.animation <= 0 then invite.canBeDeleted = true end
-
-			UiPush()
-				local w, h = 400, 95
-
-				UiTranslate(UiCenter()-w/2, UiHeight() - h*invite.animation)
-				UiAlign("top left")
-				UiColor(.0, .0, .0, .75)
-				UiImageBox("ui/common/box-solid-10.png", w, h, 10, 10)
-				UiWindow(w, h)
-				UiTranslate(5, 5)
-
-				UiColor(1,1,1,1)
-				UiFont("bold.ttf", 24)
-				UiText(timeout and (invite.accepted and "Accepted!" or "Ignored!") or "Invite to the lobby")
-				UiTranslate(0, 24)
-
-				UiFont("regular.ttf", 18)
-				UiText(invite.nick .. " has invited you to their lobby")
-
-				UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1)
-				UiTranslate(0, 22)
-				UiFont("regular.ttf", 18)
-				-- UiColor(.2, .6, .2, .75)
-				-- UiImageBox("common/box-solid-6.png", 100, 22, 6, 6)
-				UiFont("regular.ttf", 18)
-				UiColor(1,1,1,1)
-				if UiTextButton("Accept", 100, 24) then
-					TDMP_JoinLobby(invite.lobby)
-					invite.accepted = true
-					invite.die = 0
-				end
-
-				UiTranslate(0, 30)
-
-				UiColor(1,1,1, .25)
-				UiRect(w-10, 5)
-
-				UiColor(1,1,1, 1)
-				UiRect((w-10) * Remap(left, 0, 5, 0, 1), 5)
-			UiPop()
-		end
-	end
 
 	UiPush()	
 		UiTranslate(100, 200)
@@ -527,6 +481,66 @@ function drawTdmp()
 
 		UiPop()
 
+		UiPush()
+			
+			UiTranslate(0, local_h - 25 )
+			
+			if invite then
+				local left = invite.die - TDMP_FixedTime()
+				local timeout = left <= 0
+		
+				if timeout and invite.canBeDeleted then
+					invite = nil
+				else
+					invite.animation = math.min(1, invite.animation + (timeout and -.05 or .05))
+					if timeout and invite.animation <= 0 then invite.canBeDeleted = true end
+		
+					UiPush()
+						local w, h = 400, 95
+		
+						-- UiTranslate(UiCenter()-w/2, UiHeight() - h*invite.animation)
+						UiTranslate(0, -h*invite.animation)
+						UiAlign("top left")
+						UiColor(.0, .0, .0, .75)
+						UiImageBox("ui/common/box-solid-10.png", w, h, 10, 10)
+						UiWindow(w, h)
+						UiTranslate(5, 5)
+		
+						UiColor(1,1,1,1)
+						UiFont("bold.ttf", 24)
+						UiText(timeout and (invite.accepted and "Accepted!" or "Ignored!") or "Invite to the lobby")
+						UiTranslate(0, 24)
+		
+						UiFont("regular.ttf", 18)
+						UiText(invite.nick .. " has invited you to their lobby")
+		
+						UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1)
+						UiTranslate(0, 22)
+						UiFont("regular.ttf", 18)
+						-- UiColor(.2, .6, .2, .75)
+						-- UiImageBox("common/box-solid-6.png", 100, 22, 6, 6)
+						UiFont("regular.ttf", 18)
+						UiColor(1,1,1,1)
+						if UiTextButton("Accept", 100, 24) then
+							TDMP_JoinLobby(invite.lobby)
+							invite.accepted = true
+							invite.die = 0
+						end
+		
+						UiTranslate(0, 30)
+		
+						UiColor(1,1,1, .25)
+						UiRect(w-10, 5)
+		
+						UiColor(1,1,1, 1)
+						UiRect((w-10) * Remap(left, 0, 5, 0, 1), 5)
+					UiPop()
+				end
+			end
+
+		UiPop()
+
+
 		UiAlign("top left")
 		UiTranslate(local_w/2-25-438, 0)
 		-- UiColor(0, 0, 0, 0.75)
@@ -634,27 +648,27 @@ function drawTdmp()
 				tdmpStartGame()
 			end			
 		UiPop()
-		UiPush()
-			UiColor(1,1,1)
-			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
-			UiTranslate(0, 600)
-			if UiTextButton("test button", bw, bh*1.5) then
+		-- UiPush()
+		-- 	UiColor(1,1,1)
+		-- 	UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
+		-- 	UiTranslate(0, 600)
+		-- 	if UiTextButton("test button", bw, bh*1.5) then
 				
-				-- ClearKey("savegame.mod.tdmp.spawnable")
-				-- sendPacket(3, "marina_sandbox")
-				-- sendPacket(3, "steam-2594544248")
-				-- sendPacket(1, {"steam-2594544248", "steam-2513151641", "steam-2906876609"})
+		-- 		-- ClearKey("savegame.mod.tdmp.spawnable")
+		-- 		-- sendPacket(3, "marina_sandbox")
+		-- 		-- sendPacket(3, "steam-2594544248")
+		-- 		-- sendPacket(1, {"steam-2594544248", "steam-2513151641", "steam-2906876609"})
 				
-				updateMods()
+		-- 		updateMods()
 
-				-- TDMP_SendLobbyPacket(json.encode({t = 69}))
-				-- TDMP_SendLobbyPacket(json.encode({t = 3, ids = {"steam-42069"}, names ={ "testNAME"}}))
-				-- Command("mods.refresh")
-				-- end
-				-- TDMP_SendLobbyPacket(json.encode(jsontest))
-				DebugPrint("clicked tha button")
-			end
-		UiPop()
+		-- 		-- TDMP_SendLobbyPacket(json.encode({t = 69}))
+		-- 		-- TDMP_SendLobbyPacket(json.encode({t = 3, ids = {"steam-42069"}, names ={ "testNAME"}}))
+		-- 		-- Command("mods.refresh")
+		-- 		-- end
+		-- 		-- TDMP_SendLobbyPacket(json.encode(jsontest))
+		-- 		DebugPrint("clicked tha button")
+		-- 	end
+		-- UiPop()
 
 		
 	UiPop()
@@ -668,7 +682,7 @@ function loadLevel(mod, a)
 
 	if mod then
 		local modId = a
-		if startsWith(modId, "steam-") and not HasKey("mods.available."..modId) then
+		if (string.sub(modId, 1, 6) == "steam-") and not HasKey("mods.available."..modId) then
 			Command("mods.subscribe", modId)
 			pendingLevel[#pendingLevel + 1] = modId
 			loadOnModMap = modId
@@ -849,7 +863,6 @@ function removeMapFromDownloads()
 		end
 	end
 end
-
 
 function scrollableList(listType,  w, h)
 	-- types: - 1 - map select (host)
@@ -1103,7 +1116,6 @@ function scrollableList(listType,  w, h)
 	return ret
 end
 
-
 --------------------------------------- Mods Menu stuff (edited)
 
 function listMods(list, w, h, issubscribedlist)
@@ -1340,10 +1352,12 @@ function updateMods()
 			if (not tdmpList[3].all[mod.id] and string.find(mod.tags, "Spawn")) then
 				gMods[1].items[#gMods[1].items+1] = mod
 				tdmpList[3].all[mod.id] = true
+				tdmpList[3].type[mod.id] = 1
 			end
 			if mod.override then
 				gMods[2].items[#gMods[2].items+1] = mod
 				tdmpList[3].all[mod.id] = true
+				tdmpList[3].type[mod.id] = 2
 			end
 		else
 			gMods[3].items[#gMods[3].items+1] = mod

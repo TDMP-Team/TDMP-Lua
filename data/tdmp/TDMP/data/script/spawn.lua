@@ -126,7 +126,7 @@ function init()
 	local types = {}
 	for m=1, #mods do
 		local mod = mods[m]
-		if HasKey("mods.available." .. mod) then
+		if HasKey("mods.available." .. mod) and HasKey("savegame.mod.tdmp.spawnables."..mod) then
 			local ids = ListKeys("spawn." .. mod)
 			for i=1, #ids do
 				local tmp = "spawn." .. mod .. "." .. ids[i]
