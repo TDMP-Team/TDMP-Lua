@@ -88,7 +88,7 @@ function init()
 
 	updateMods()
 	initSlideshow()
-	updateMaps()
+	-- updateMaps()
 
 	gOptionsScale = 0
 	gSandboxScale = 0
@@ -752,7 +752,11 @@ function receivePacket(isHost, senderId, packet)
 		TDMP_Print("Got map id:", packetDecoded.ids[1])
 		if not packetDecoded.names then packetDecoded.names = {""} end
 		if tdmpSelectedMap then 
-			removeMapFromDownloads()
+			for i,v in ipairs(tdmpList[2].items) do
+				if tdmpList[2].items[i].isMap then
+					table.remove(tdmpList[2].items, i)
+				end
+			end
 			tdmpSelectedMap = {} 
 		end
 		tdmpSelectedMap = tdmpMapInfo(packetDecoded.ids[1],packetDecoded.names[1])
@@ -807,6 +811,7 @@ function tdmpMapInfo(id, name)
 		map.name = name
 		map.isMod = true
 		map.toDownload = true
+		map.isMap = true
 		tdmpList[2].items[#tdmpList[2].items+1] = map
 		return map
 	else
@@ -846,21 +851,13 @@ function tdmpModsAction(action, ids, names)
 
 			end
 		end
-	elseif action == 2 then
+	elseif action == 2 then  -- TODO: fix removinf of mod when changing map
 		local id = ids[1]
 			for i, v in ipairs(tdmpList[2].items) do
-				if tdmpList[2].items[i].id == id then
+				if (tdmpList[2].items[i].id == id) and (not tdmpList[2].items[i].isMap) then
 					table.remove(tdmpList[2].items, i)
 				end
 			end
-	end
-end
-
-function removeMapFromDownloads()
-	for i,v in ipairs(tdmpList[2].items) do
-		if tdmpList[2].items[i].id == tdmpSelectedMap.id then
-			table.remove(tdmpList[2].items, i)
-		end
 	end
 end
 
@@ -871,7 +868,7 @@ function scrollableList(listType,  w, h)
 	--        - 4 - 
 
 	if listType == 1 then
-		list =  tdmpList[1]
+		list = tdmpList[1]
 	elseif listType == 2 then
 		if tdmpModListMode == 0 then
 			list = gMods[4]
@@ -897,17 +894,6 @@ function scrollableList(listType,  w, h)
 		UiAlign("top left")
 		UiFont("regular.ttf", 22)
 		
-		local mouseOver = UiIsMouseInRect(w+12, h)
-		if mouseOver then
-			list.pos = list.pos + InputValue("mousewheel")
-			if list.pos > 0 then
-				list.pos = 0
-			end
-		end
-		if not UiReceivesInput() then
-			mouseOver = false
-		end
-
 		local itemHeight
 		if listType == 1 then
 			itemHeight = 75
@@ -915,6 +901,21 @@ function scrollableList(listType,  w, h)
 			itemHeight = UiFontHeight()
 		end	
 		local itemsInView = math.floor(h/itemHeight)
+
+		local mouseOver = UiIsMouseInRect(w+12, h)
+		if mouseOver then
+			list.pos = list.pos + InputValue("mousewheel")
+			if list.pos > 0 then
+				list.pos = 0
+			elseif list.pos < - (#list.items - itemsInView) then
+				list.pos = - (#list.items - itemsInView)
+			end
+		end
+		if not UiReceivesInput() then
+			mouseOver = false
+		end
+
+
 		local someStupidFractionThatWhasMessingWithScroll = itemsInView/h
 		if #list.items > itemsInView then
 			local scrollCount = (#list.items-itemsInView)
@@ -927,6 +928,8 @@ function scrollableList(listType,  w, h)
 				local dy = someStupidFractionThatWhasMessingWithScroll * (posy - list.dragstarty)
 				list.pos = -dy / frac
 			end
+			DebugWatch("map pos", list.pos)
+			DebugWatch("#list.items", #list.items)
 
 			UiPush()
 				UiTranslate(w, 0)
@@ -975,7 +978,7 @@ function scrollableList(listType,  w, h)
 		else
 			list.possmooth = list.possmooth + (list.pos-list.possmooth) * 10 * GetTimeStep()
 		end
-		UiTranslate(0, list.possmooth*22)
+		UiTranslate(0, list.possmooth*itemHeight)
 
 		UiAlign("left")
 		UiColor(0.95,0.95,0.95,1)
@@ -1390,6 +1393,7 @@ function updateMods()
 		end
 	end
 
+	updateMaps()
 end
 
 function selectMod(mod)
