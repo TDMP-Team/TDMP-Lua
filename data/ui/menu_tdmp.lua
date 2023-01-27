@@ -64,7 +64,7 @@ function init()
 
 
 	tdmpList = {}
-	for i=1,2 do
+	for i=1,3 do
 		tdmpList[i] = {}
 		tdmpList[i].items = {}
 		tdmpList[i].pos = 0
@@ -75,14 +75,17 @@ function init()
 		tdmpList[i].isdragging = false
 		tdmpList[i].ids = {}
 	end
-	tdmpList[3] = {} -- list of steam ids of mods
-	tdmpList[3].all = {}
-	tdmpList[3].state = {}
-	tdmpList[3].type = {} -- 1: spawnables
+	tdmpList[4] = {} -- list of steam ids of mods
+	tdmpList[4].all = {}
+	tdmpList[4].state = {}
+	tdmpList[4].type = {} -- 1: spawnables
 						  -- 2: global
+	-- tdmpList[5] = {status = {}, all = {}, done = {}}
+	tdmpList[5] = {}
 
 	-- tdmpList[1] -- Maps
-	-- tdmpList[2] -- Mods in session
+	-- tdmpList[2] -- Mods in session (global)
+	-- tdmpList[3] -- Mods in session (spawnables)
 
 	tdmpModDownload = {status = 1, current = 0, toBeDownloaded = {}}
 	tdmpModFlag = 0
@@ -268,13 +271,13 @@ function tdmpEnableMods()
 	deactivateMods(true, true, true)
 	ClearKey("savegame.mod.tdmp.spawnables")
 
-	for i, v in pairs(tdmpList[3].state) do
+	for i, v in pairs(tdmpList[4].state) do
 		-- DebugPrint(i)
-		if tdmpList[3].state[i] and tdmpList[3].type[i] == 2 then
+		if tdmpList[4].state[i] and tdmpList[4].type[i] == 2 then
 			-- SetBool("mods.available."..i..".active", true)
 			Command("mods.activate", i)
 			DebugPrint("Enabling: "..i)
-		elseif tdmpList[3].state[i] and tdmpList[3].type[i] == 1 then
+		elseif tdmpList[4].state[i] and tdmpList[4].type[i] == 1 then
 		SetBool("savegame.mod.tdmp.spawnables."..i, true)
 		-- else
 		-- 	SetBool("mods.available."..i..".active", false)
@@ -316,6 +319,8 @@ function drawTdmp()
 	local local_w = UiWidth() - 200
 	local local_h = UiHeight() - 300
 
+	local subBoxH = local_h - 50 - bh*1.5 - 25
+
 	inLobby = TDMP_IsLobbyValid()
 	amIhost = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
 	-- amIhost = false
@@ -338,12 +343,11 @@ function drawTdmp()
 		UiAlign("top left")
 		UiTranslate(25, 25)
 
-		UiImageBox("common/box-solid-10.png", 438, local_h - 50 - bh*1.5 - 25, 10, 10)
+		UiImageBox("common/box-solid-10.png", 438, subBoxH, 10, 10)
 
 		UiPush() -- Lobby member box
 			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
-			UiWindow(438, local_h - 50 - bh*1.5 - 25, true)
-			-- DebugPrint(local_h - 50 - bh*1.5 - 25) -- 645
+			UiWindow(438, subBoxH, true)
 			UiColor(0.96, 0.96, 0.96)
 
 			UiTranslate(10, 10)
@@ -356,30 +360,47 @@ function drawTdmp()
 				UiText("Lobby members " .. #members .. "/" .. TDMP_MaxPlayers)
 
 				
-			for i, member in ipairs(members) do
-				UiTranslate(0,36)
-				
-				UiPush()
-					UiAlign("middle left")
-					local pixel = 0
-					for x=1,32 do
-						for y=1,32 do
-							UiColor(member.avatar[pixel+1]/255,member.avatar[pixel+2]/255,member.avatar[pixel+3]/255,1)
-							-- UiColor(1,1,1)
-							UiRect(1, 1)
+				for i, member in ipairs(members) do
+					UiTranslate(0,36)
 
-							UiTranslate(1,0)
-							pixel = pixel + 4
+					UiPush()
+						UiAlign("middle left")
+						local pixel = 0
+						for x=1,32 do
+							for y=1,32 do
+								UiColor(member.avatar[pixel+1]/255,member.avatar[pixel+2]/255,member.avatar[pixel+3]/255,1)
+								-- UiColor(1,1,1)
+								UiRect(1, 1)
+
+								UiTranslate(1,0)
+								pixel = pixel + 4
+							end
+							UiTranslate(-32,1)
 						end
-						UiTranslate(-32,1)
-					end
-					UiTranslate(0,32)
-					UiColor(0.96, 0.96, 0.96)
+						UiTranslate(0,32)
+						-- if member.isOwner then 
+						-- 	UiColor(0.96, 0.5, 0.5)
+						-- else
+							UiColor(0.96, 0.96, 0.96)
+						-- end
 
-					UiTranslate(36,-32 - 16)
-					UiText(member.nick .. (member.isOwner and " (Host)" or ""))
-				UiPop()
-			end
+						UiTranslate(36, -32-16)
+						UiText(member.nick .. ((member.steamId == TDMP_LocalSteamID) and " (You)" or ""))
+						UiTranslate(438-36-10-10, 0)
+						UiAlign("right")
+						-- UiText("test")
+						local playerStat = tdmpList[5][member.id] or nil
+						if playerStat == 2 then
+							UiText("Downloading")
+						elseif playerStat == 3 then
+							UiText("Ready")
+						elseif not member.isOwner then
+							UiText("Waiting")
+						elseif member.isOwner then
+							UiText("Host")
+						end
+					UiPop()
+				end
 			end
 		UiPop()
 
@@ -419,23 +440,21 @@ function drawTdmp()
 
 		UiTranslate(local_w/2-25, 0)
 		UiAlign("top center")
-		UiImageBox("common/box-solid-10.png", 438, 500 - bh*1.5 - 25, 10, 10)
+		UiImageBox("common/box-solid-10.png", 438, subBoxH, 10, 10)
 
 		UiPush() -- mods menu
 			UiTranslate(10, 10)
 			-- UiAlign("top centre")
-			UiWindow(418, 500-20, true)
+			UiWindow(418, subBoxH, true)
 
 			-- UiPush()
-				UiPush()
-					UiTranslate(0, 20)
-					UiFont("regular.ttf", 22)
-					UiAlign("left middle")
-					UiColor(1,1,1,1)
-					if amIhost then
-						UiText("Mods:") 
-					
-						
+			UiPush()
+				UiTranslate(0, 20)
+				UiFont("regular.ttf", 22)
+				UiAlign("left middle")
+				UiColor(1,1,1,1)
+				if amIhost then
+					UiText("Mods:") 
 					UiTranslate(56, 0)
 					-- DebugWatch("test:", UiGetTextSize("Mods:"))
 
@@ -460,18 +479,26 @@ function drawTdmp()
 					end
 
 				else 
-					UiText("Mods enabled by host:") end
-					
-				UiPop()
-
-				UiTranslate(0, 30+10)
-
-				if amIhost then 
-					scrollableList(2, 250, 645-20-30-300)
-				else
-				-- UiTranslate(0, 645-20-30-300+10)
-					scrollableList(3, 250, 645-20-30-300)
+					UiText("Mods enabled by host:")
 				end
+					
+			UiPop()
+
+			UiTranslate(0, 30+10)
+
+			if amIhost then 
+				scrollableList(2, 780/2-20-40, 645-20-30-300)
+			else
+			-- UiTranslate(0, 645-20-30-300+10)
+				scrollableList(3, 418-20-14, subBoxH/2-40-10)
+				UiTranslate(0, subBoxH/2-40)
+				UiFont("regular.ttf", 22)
+				UiColor(1,1,1,1)
+				UiAlign("left top")
+				UiText("Mods:") 
+				UiTranslate(0,5+22)
+				scrollableList(4, 418-20-14, subBoxH/2-40-10)
+			end
 			-- UiPop()
 
 		UiPop()
@@ -484,14 +511,14 @@ function drawTdmp()
 		UiAlign("top left")
 		UiTranslate(local_w/2-25-438, 0)
 		-- UiColor(0, 0, 0, 0.75)
-		UiImageBox("common/box-solid-10.png", 438, local_h - 50 - bh*1.5 - 25, 10, 10)
+		UiImageBox("common/box-solid-10.png", 438, subBoxH, 10, 10)
 
 
 		UiPush() -- Map selection box
 			UiTranslate(10, 10)
 			-- UiAlign("top left")
 			-- UiImageBox("common/box-solid-10.png", 400, local_h - 50, 10, 10)
-			UiWindow(418, local_h - 50 - bh*1.5 - 25-20, true)
+			UiWindow(418, subBoxH-20, true)
 			UiColor(0.96, 0.96, 0.96)
 
 			-- UiTranslate(10, 10)
@@ -505,7 +532,7 @@ function drawTdmp()
 			UiTranslate(0,30)
 
 			if amIhost then
-				tdmpSelectedMap = scrollableList(1, 438-10-10-14, 645-20-30)
+				scrollableList(1, 438-10-10-14, 645-20-30)
 			elseif tdmpSelectedMap and (tdmpSelectedMap.toDownload == false) then
 				UiPush()
 					UiTranslate(0, 10)
@@ -540,9 +567,11 @@ function drawTdmp()
 					
 					UiAlign("left middle")
 
-					UiTranslate(75+10, 75/2-18+10)
+					UiTranslate(10, 75/2-18)
 
-					UiText("(to be down)"..tdmpSelectedMap.name)
+					UiText("Will be downloaded:")
+					UiTranslate(0,22)
+					UiText(tdmpSelectedMap.name)
 				UiPop()
 			else
 				UiPush()
@@ -568,11 +597,23 @@ function drawTdmp()
 			else
 				UiColor(0.8,0.8,0.8)
 			end
-			if UiTextButton((serverExists and "Join") or "Start", bw, bh*1.5) and tdmpSelectedMap then
-				UiSound("common/click.ogg")
+			if amIhost then
+				local bText = ""
+				if tdmpSelectedMap then bText = "Start" else bText = "Select Map" end
+				if UiTextButton(bText, bw, bh*1.5) and tdmpSelectedMap then
+					UiSound("common/click.ogg")
 
-				tdmpStartGame()
-			end			
+					tdmpStartGame()
+				end	
+			else
+				local bText = ""
+				if tdmpSelectedMap then bText = "Start" else bText = "Waiting for host" end
+				if UiTextButton(bText, bw, bh*1.5) and tdmpSelectedMap then
+					UiSound("common/click.ogg")
+
+					tdmpStartGame()
+				end			
+			end
 		UiPop()
 		UiPush()
 			UiColor(1,1,1)
@@ -581,8 +622,9 @@ function drawTdmp()
 			if UiTextButton("test button", bw, bh*1.5) then
 				
 				
-				tdmpModDownload.status = 1
-				tdmpModDownload.start = 1
+				-- tdmpModDownload.status = 1
+				-- tdmpModDownload.start = 1
+				TDMP_SendLobbyPacket(json.encode({t = 4}))
 
 
 				DebugPrint("clicked tha button")
@@ -754,15 +796,13 @@ function receivePacket(isHost, senderId, packet)
 	TDMP_Print(senderId, packet)
 	local packetDecoded = json.decode(packet)
 	local action = packetDecoded.t
-	-- DebugPrint(packetDecoded.id)
-	-- DebugPrint(packetDecoded.t)
-	-- DebugPrint(action)
-	-- DebugPrint(#packetDecoded.names)
-	if (action == 1 or action == 2) and isHost and (not amIhost) then
-		tdmpModsAction(action, packetDecoded.ids, packetDecoded.names)
+	if action == 1 and isHost and (not amIhost) then
+		tdmpModAction(1, packetDecoded.id, packetDecoded.name)
+	elseif action == 2 and isHost and (not amIhost) then
+		tdmpModAction(2, packetDecoded.id)
 	elseif action == 3 and isHost and (not amIhost) then
-		TDMP_Print("Got map id:", packetDecoded.ids[1])
-		if not packetDecoded.names then packetDecoded.names = {""} end
+		TDMP_Print("Got map id:", packetDecoded.id)
+		if not packetDecoded.name then packetDecoded.name = {""} end
 		if tdmpSelectedMap then 
 			for i,v in ipairs(tdmpList[2].items) do
 				if tdmpList[2].items[i].isMap then
@@ -771,32 +811,26 @@ function receivePacket(isHost, senderId, packet)
 			end
 			tdmpSelectedMap = {} 
 		end
-		tdmpSelectedMap = tdmpMapInfo(packetDecoded.ids[1],packetDecoded.names[1])
+		tdmpSelectedMap = tdmpMapInfo(packetDecoded.id, packetDecoded.name)
+	elseif action == 4 and senderId ~= TDMP_LocalSteamID then
+		DebugPrint("got 4")
 	end
 end
 
 function sendPacket(action, data) -- TODO: make sure we are not sending packets longer than 4092 characters
-	local packet = {}
 	if action then
-		if type(data) == "string" then data = {data} end
-		
-		packet.ids = data
 		if action == 1 then
-			packet.names = {}
-			for i,v in ipairs(data) do
-				packet.names[#packet.names+1] = GetString("mods.available."..v..".listname")
-			end
+			TDMP_SendLobbyPacket(json.encode({t = action, id = data, name = GetString("mods.available."..data..".listname"), mt = tdmpList[4].type[data]}))
 		elseif action == 3 then
-			if string.sub(data[1],1,6) == "steam-" then
-				packet.names = {}
-				packet.names[1] = GetString("mods.available."..data[1]..".listname")
+			local mName = ""
+			if string.sub(data,1,6) == "steam-" then
+				mName = GetString("mods.available."..data..".listname")
 			end
+			TDMP_SendLobbyPacket(json.encode({t = action, id = data, name = mName}))
+		elseif action == 2 then
+			TDMP_SendLobbyPacket(json.encode({t = action, id = data}))
 		end
-
-		TDMP_Print("sending packet:", action)
-		-- DebugPrint(packet.ids[1])
-		TDMP_SendLobbyPacket(json.encode({t = action, ids = packet.ids, names = packet.names}))
-	else
+else
 		TDMP_Print("sendPacket: no action specified")
 	end
 end
@@ -827,9 +861,7 @@ function tdmpMapInfo(id, name)
 		tdmpList[2].items[#tdmpList[2].items+1] = map
 		return map
 	else
-		DebugPrint("gSandbox #: "..#gSandbox)
 		for i=1, #gSandbox do
-			TDMP_Print("gSandbox: ", gSandbox[i].id)
 			if id == gSandbox[i].id then
 				local map = gSandbox[i]
 				map.isMod = false
@@ -841,11 +873,11 @@ function tdmpMapInfo(id, name)
 	end
 end
 
-function tdmpModsAction(action, ids, names)
+function tdmpModAction(action, id, name)
 	if action == 1 then
-		for i=1, #ids do
-			local id = ids[i]
-			if tdmpList[3].all[id] then
+		-- for i=1, #ids do
+			-- local id = ids
+			if tdmpList[4].all[id] then
 				DebugPrint("there is a mod: "..id)
 				local mod ={}
 				mod.id = id
@@ -857,14 +889,13 @@ function tdmpModsAction(action, ids, names)
 				DebugPrint("need to download: "..id)
 				local mod ={}
 				mod.id = id
-				mod.name = names[i]
+				mod.name = name
 				mod.toDownload = true
 				tdmpList[2].items[#tdmpList[2].items+1] = mod
 				tdmpModFlag = 1
 			end
-		end
+		-- end
 	elseif action == 2 then  -- TODO: fix removinf of mod when changing map
-		local id = ids[1]
 		DebugPrint("Got id to remove: "..id)
 			for i, v in ipairs(tdmpList[2].items) do
 				if (tdmpList[2].items[i].id == id) and (not tdmpList[2].items[i].isMap) then
@@ -878,8 +909,8 @@ end
 function scrollableList(listType,  w, h)
 	-- types: - 1 - map select (host)
 	--        - 2 - list of all mods (host)
-	--        - 3 - list of enabled mods (client)
-	--        - 4 - 
+	--        - 3 - list of enabled mods (global)(client)
+	--        - 4 - list of enabled mods (spawnables)(client)
 
 	if listType == 1 then
 		list = tdmpList[1]
@@ -894,13 +925,11 @@ function scrollableList(listType,  w, h)
 	elseif listType == 3 then
 		list = tdmpList[2]
 	elseif listType == 4 then
-
+		list = tdmpList[3]
 	else
 		return
 	end
 
-	local ret = ""
-	local rmb_pushed = false
 	if list.isdragging and InputReleased("lmb") then
 		list.isdragging = false
 	end
@@ -976,6 +1005,7 @@ function scrollableList(listType,  w, h)
 			UiPop()
 			list.pos = clamp(list.pos, -scrollCount, 0)
 		else
+			w = w + 14
 			list.pos = 0
 			list.possmooth = 0
 		end
@@ -1005,7 +1035,7 @@ function scrollableList(listType,  w, h)
 					-- local id = list.items[i].id
 					if gMapSelected == i then
 						UiColor(1,1,1,0.1)
-						ret = tdmpList[1].items[i]
+						tdmpSelectedMap = tdmpList[1].items[i]
 					else
 						if mouseOver and UiIsMouseInRect(w-10-10, 75) then
 							UiColor(0,0,0,0.1)
@@ -1026,17 +1056,17 @@ function scrollableList(listType,  w, h)
 						UiTranslate(10,75/2-18)
 
 						UiScale(0.5)
-						if not list.items[i].isMod then
-							UiImage(list.items[i].image)
-						-- elseif (-list.pos) < i-1 then
-						else
-							local imgPath = "RAW:"..list.items[i].path .. "/preview.jpg"
-							UiPush()
-							UiScale(128/UiGetImageSize(imgPath))
-							UiImage("RAW:"..list.items[i].path .. "/preview.jpg")
-							-- DebugPrint(list.items[i].path .. "/preview.jpg")
-							UiPop()
-						end
+						-- if not list.items[i].isMod then
+						-- 	UiImage(list.items[i].image)
+						-- -- elseif (-list.pos) < i-1 then
+						-- else
+						-- 	local imgPath = "RAW:"..list.items[i].path .. "/preview.jpg"
+						-- 	UiPush()
+						-- 	UiScale(128/UiGetImageSize(imgPath))
+						-- 	UiImage("RAW:"..list.items[i].path .. "/preview.jpg")
+						-- 	-- DebugPrint(list.items[i].path .. "/preview.jpg")
+						-- 	UiPop()
+						-- end
 					UiPop()
 
 					UiTranslate(75+10, 75/2-18)
@@ -1056,15 +1086,10 @@ function scrollableList(listType,  w, h)
 							UiColor(0,0,0,0.1)
 							if InputPressed("lmb") then
 								UiSound("terminal/message-select.ogg")
-								ret = id
+								tdmpSelectedMap = id
 							end
 						end
 					end
-					-- if mouseOver and UiIsMouseInRect(228, 22) and InputPressed("rmb") then
-					-- 	ret = id
-					-- 	rmb_sel = id;
-					-- 	rmb_pushed = true
-					-- end
 					UiRect(w, itemHeight)
 				UiPop()
 
@@ -1075,16 +1100,16 @@ function scrollableList(listType,  w, h)
 					UiTranslate(-10, -18)
 					if UiIsMouseInRect(228, 22) and InputPressed("lmb") and mouseInBox then
 					-- if UiIsMouseInRect(228, 22) and InputPressed("lmb") then
-						if tdmpList[3].state[modID] then
+						if tdmpList[4].state[modID] then
 							-- Command("mods.deactivate", list.items[i].id)
-							tdmpList[3].state[modID] = false
+							tdmpList[4].state[modID] = false
 							-- DebugPrint(modID)
-							sendPacket(2, list.items[i].id)
+							sendPacket(2, modID)
 							-- updateMods()
 							-- list.items[i].active = false
 						else
-							tdmpList[3].state[modID] = true
-							sendPacket(1, list.items[i].id)
+							tdmpList[4].state[modID] = true
+							sendPacket(1, modID)
 							-- updateMods()
 							-- list.items[i].active = true
 						end
@@ -1096,7 +1121,7 @@ function scrollableList(listType,  w, h)
 						UiTranslate(2, -6)
 						UiAlign("center middle")
 						UiScale(0.5)
-						if (listType == 2 and tdmpList[3].state[list.items[i].id]) or (listType == 3 and tdmpList[2].items[i].toDownload) then
+						if (listType == 2 and tdmpList[4].state[list.items[i].id]) or (listType == 3 and tdmpList[2].items[i].toDownload) then
 							UiColor(1, 1, 0.5)
 							UiImage("menu/mod-active.png")
 						else
@@ -1123,14 +1148,7 @@ function scrollableList(listType,  w, h)
 				UiTranslate(0, itemHeight)
 			end
 		end
-
-		-- if not rmb_pushed and mouseOver and InputPressed("rmb") then
-		-- 	rmb_pushed = true
-		-- end
-
 	UiPop()
-
-	return ret
 end
 
 --------------------------------------- Mods Menu stuff (edited)
@@ -1347,7 +1365,7 @@ function updateMods()
 	gMods[2].items = {}
 	gMods[3].items = {}
 	gMods[4].items = {}
-	tdmpList[3].all = {}
+	tdmpList[4].all = {}
 
 	local mods = ListKeys("mods.available")
 	local foundSelected = false
@@ -1366,15 +1384,15 @@ function updateMods()
 		local iscontentmod = GetBool("mods.available."..mods[i]..".playable")
 
 		if not (string.sub(mod.id,1,6) == "local-") then
-			if (not tdmpList[3].all[mod.id] and string.find(mod.tags, "Spawn")) then
+			if (not tdmpList[4].all[mod.id] and string.find(mod.tags, "Spawn")) then
 				gMods[1].items[#gMods[1].items+1] = mod
-				tdmpList[3].all[mod.id] = true
-				tdmpList[3].type[mod.id] = 1
+				tdmpList[4].all[mod.id] = true
+				tdmpList[4].type[mod.id] = 1
 			end
 			if mod.override then
 				gMods[2].items[#gMods[2].items+1] = mod
-				tdmpList[3].all[mod.id] = true
-				tdmpList[3].type[mod.id] = 2
+				tdmpList[4].all[mod.id] = true
+				tdmpList[4].type[mod.id] = 2
 			end
 		else
 			gMods[3].items[#gMods[3].items+1] = mod
@@ -2661,53 +2679,6 @@ function draw()  -- main funtion
 		UiPop()
 	end
 	
-	-- promoDraw()
-
-	local dt = GetTimeStep()*5
-	if #pendingLevel > 0 then
-		downloadingMod = math.min(downloadingMod + dt, 1)
-	elseif downloadingMod > 0 then
-		downloadingMod = downloadingMod - dt
-	end
-
-	if downloadingMod > 0 then
-		UiPush()
-			UiColor(0,0,0, downloadingMod)
-			UiRect(UiWidth(), UiHeight())
-			
-			UiColor(1,1,1, downloadingMod)
-			UiTranslate(UiCenter(), UiMiddle())
-			UiFont("regular.ttf", 32)
-			UiAlign("center middle")
-
-			local l = "Done!"
-			if #pendingLevel > 0 then
-				l = "Downloading " .. #pendingLevel .. " mod(s)"
-				local t = math.mod(GetTime(), 4.0)
-				if t > 1 then l = l.."." end
-				if t > 2 then l = l.."." end
-				if t > 3 then l = l.."." end
-			end
-
-			for i, modId in ipairs(pendingLevel) do
-				if HasKey("mods.available."..modId) then
-					table.remove(pendingLevel, i)
-				end
-			end
-
-			UiText(l)
-		UiPop()
-
-		if #pendingLevel <= 0 and loadOnModMap then
-			Command("mods.play", loadOnModMap)
-
-			loadOnModMap = nil
-		end
-	end
-
-	-- local s, err = pcall(drawTdmp) -- dumb walk-around of lua error when something happens in lobby (such as re-creation of lobby or member leave)
-	-- if not s then TDMP_Print(err) end
-
 	-- yes-no popup
 	if yesNoPopup.show and yesNo() then
 		yesNoPopup.show = false
