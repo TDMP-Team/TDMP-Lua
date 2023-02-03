@@ -478,8 +478,21 @@ function drawTdmp()
 						end
 					end
 
+					UiTranslate(250-56, 0)
+					if UiTextButton("Disable all", 120, 26) then
+						sendPacket(7)
+						for i,v in pairs(tdmpList[4].state) do 
+							tdmpList[4].state[i] = nil
+						end
+					end
 				else 
+					UiColor(1,1,1,0.8)
+					UiButtonImageBox("common/box-solid-4.png", 4, 4, 1, 1, 1, 0.1)
 					UiText("Mods enabled by host:")
+					UiTranslate(250, 0)
+					if UiTextButton("Refresh lists", 120, 26) then
+						
+					end
 				end
 					
 			UiPop()
@@ -642,11 +655,11 @@ function drawTdmp()
 		-- 	UiTranslate(0, 600)
 		-- 	if UiTextButton("test button", bw, bh*1.5) then
 				
-				
+		-- 		sendPacket(6, 2)
 		-- 		-- tdmpModDownload.status = 1
 		-- 		-- tdmpModDownload.start = 1
-		-- 		TDMP_SendLobbyPacket(json.encode({t = 5}))
-		-- 		sendPacket(4,{a=5,c=2})
+		-- 		-- TDMP_SendLobbyPacket(json.encode({t = 5}))
+		-- 		-- sendPacket(4,{a=5,c=2})
 
 		-- 		DebugPrint("clicked tha button")
 		-- 	end
@@ -834,20 +847,33 @@ function receivePacket(isHost, senderId, packet)
 			tdmpSelectedMap = {} 
 		end
 		tdmpSelectedMap = tdmpMapInfo(packetDecoded.id, packetDecoded.name)
-	-- elseif action == 4 and senderId ~= TDMP_LocalSteamID then
-	elseif action == 4 then
+	elseif action == 4 and senderId ~= TDMP_LocalSteamID then
+	-- elseif action == 4 then
 		tdmpList[5][senderId] = {s = packetDecoded.d.s, all = packetDecoded.d.a, cur = packetDecoded.d.c}
-		if amIhost then
+		-- if amIhost then
+		-- end
+		if packetDecoded.d.s == 1 then
 			local ready = 0
 			for i,v in pairs(tdmpList[5]) do
 				if v.s == 1 then ready = ready + 1 end
 			end
-			TDMP_Print("ready:", ready)
+			-- TDMP_Print("ready:", ready)
+			-- TDMP_Print("#lobby members", #TDMP_GetLobbyMembers())
 			if ready == (#TDMP_GetLobbyMembers() - 1) then tdmpStartGame() end
 		end
 	elseif action == 5 then
 		tdmpModDownload.status = 1
 		tdmpModDownload.start = 1
+
+		-- action 6 is only for sending for host
+	elseif action == 7 and isHost then
+		tdmpList[2].items = {}
+		tdmpList[3].items = {}
+
+	elseif action == 9 and isHost then
+		for i,v in ipairs(packetDecoded.i) do
+			tdmpModAction(1, packetDecoded.i[i], packetDecoded.n[i], packetDecoded.m[i])
+		end
 	end
 end
 
@@ -866,6 +892,41 @@ function sendPacket(action, data) -- TODO: make sure we are not sending packets 
 		elseif action == 4 then
 			TDMP_SendLobbyPacket(json.encode({t = action, d = data }))
 		elseif action == 5 then 
+			TDMP_SendLobbyPacket(json.encode({t = action}))
+		elseif action == 6 and amIhost and data == 2 then
+			local pData = {t = 9, m = {}, i = {}, n = {}}
+			local pLenght = 27 -- 2+4+2+5+5+2+5+2
+			-- packetData = {t=9,i={"steam-2525610230","steam-2525610231"},m={2,2},n={"test mod 2","123rock"}}
+			-- pLenght = 
+			for i, v in pairs(tdmpList[4].state) do
+				local pLenghtAdd = 0
+				local pDataAdd = {}
+				pDataAdd.i = i
+				pLenghtAdd = pLenghtAdd + #i
+				pDataAdd.n = GetString("mods.available."..i..".listname")
+				pLenghtAdd = pLenghtAdd + #pDataAdd.n + 2 + 3 + 3
+				pDataAdd.m = tdmpList[4].type[i]
+				if (pLenght + pLenghtAdd) > 4092 then
+					TDMP_Print(pLenght)
+					TDMP_Print(json.encode(pData))
+					TDMP_SendLobbyPacket(json.encode(pData))
+					pLenght = 27
+					pData = {t = 9, m = {}, i = {}, n = {}}
+				else
+					pData.m[#pData.m+1] = pDataAdd.m
+					pData.i[#pData.i+1] = pDataAdd.i
+					pData.n[#pData.n+1] = pDataAdd.n
+					pLenght = pLenght + pLenghtAdd
+				end
+				
+			end
+			if pLenght > 27 then 
+				TDMP_Print(pLenght)
+				
+				TDMP_Print(json.encode(pData))
+				TDMP_SendLobbyPacket(json.encode(pData))
+			end
+		elseif action == 7 then
 			TDMP_SendLobbyPacket(json.encode({t = action}))
 		end
 else
@@ -1146,7 +1207,7 @@ function scrollableList(listType,  w, h)
 					-- if UiIsMouseInRect(228, 22) and InputPressed("lmb") then
 						if tdmpList[4].state[modID] then
 							-- Command("mods.deactivate", list.items[i].id)
-							tdmpList[4].state[modID] = false
+							tdmpList[4].state[modID] = nil
 							-- DebugPrint(modID)
 							sendPacket(2, modID)
 							-- updateMods()
@@ -1194,6 +1255,18 @@ function scrollableList(listType,  w, h)
 		end
 	UiPop()
 end
+
+function memberStateChange(steamId, connected)
+	if connected then
+		TDMP_Print("joined:", steamId)
+		tdmpStartFlag = false
+		if #tdmpList[2].items ~= 0 then sendPacket(6,2) end
+		if tdmpSelectedMap then sendPacket(3, tdmpSelectedMap.id) end
+	else
+		TDMP_Print("left:", steamId)
+		tdmpList[5][steamId] = nil
+	end
+  end
 
 --------------------------------------- Mods Menu stuff (edited)
 
@@ -2475,13 +2548,16 @@ function drawTopBar()
 	UiPush()
 		UiColor(0,0,0, 0.75)
 		UiRect(UiWidth(), 150)
+		UiFont("regular.ttf", 36)
 		UiColor(1,1,1)
 		UiPush()
 			UiTranslate(50, 20)
 			UiScale(0.8)
 			UiImage("menu/logo.png")
+			UiScale(1)
+			UiTranslate(500-40,146-40)
+			UiText("Multiplayer")
 		UiPop()
-		UiFont("regular.ttf", 36)
 		UiTranslate(800, 30)
 		UiTranslate(0, 50)
 		UiAlign("center middle")
@@ -2606,6 +2682,7 @@ function tick()
 	-- DebugWatch("current", tdmpModDownload.current)
 	-- DebugWatch("all",tdmpModDownload.numberOfMods)
 	-- DebugWatch("flag",tdmpModFlag)
+	
 	-- if GetTime() > 0.1 then
 	-- 	if gActivations >= 2 then
 	-- 		PlayMusic("tdmp/menu.ogg")
@@ -2663,20 +2740,18 @@ function tick()
 					tdmpModDownload.status = 2
 				else
 					popup.type = 3
-					sendPacket(4,{s = 1})
+					-- sendPacket(4,{s = 1})
 					tdmpModDownload.status = 4
 				end
 			end
 		elseif tdmpModDownload.status == 4 then
+			-- TDMP_Print("no of mods: ",tdmpModDownload.numberOfMods)
 			-- if tdmpModDownload.current == 0 then
 			-- 	tdmpModDownload.start = false
 			-- 	tdmpModFlag = 2
 			-- else
 				-- tdmpSelectedMap = tdmpMapInfo(tdmpSelectedMap.id,tdmpSelectedMap.name) -- refresh map
-				if tdmpModDownload.numberOfMods == 0 then
-					sendPacket(4,{s = 1})
-				
-				end
+				sendPacket(4,{s = 1})
 				tdmpModDownload.start = false
 				tdmpModFlag = 2
 				TDMP_Print("All mods downloaded")
