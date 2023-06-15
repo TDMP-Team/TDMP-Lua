@@ -2217,22 +2217,16 @@ function drawTdmp()
 				UiTranslate(0,-36)
 				
 				UiPush()
-					UiAlign("middle left")
-					local pixel = 0
-					for x=1,32 do
-						for y=1,32 do
-							UiColor(member.avatar[pixel+1]/255,member.avatar[pixel+2]/255,member.avatar[pixel+3]/255,1)
-							UiRect(1, 1)
 
-							UiTranslate(1,0)
-							pixel = pixel + 4
-						end
-						UiTranslate(-32,1)
+					UiAlign("top left")
+					if member.avatar then
+						UiImage("RAW:"..GetString("game.path").."/avatar_cache/"..member.steamId..".jpg")
 					end
 					UiTranslate(0,32)
 					UiColor(1, 1, 1, .5)
 
-					UiTranslate(36,-32 - 16)
+					UiAlign("middle left")
+					UiTranslate(36, -16)
 					UiText(member.nick .. (member.isOwner and " (Host)" or ""))
 				UiPop()
 			end
