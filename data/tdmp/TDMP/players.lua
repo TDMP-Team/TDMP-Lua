@@ -889,7 +889,11 @@ function DrawPlayerModelSelector()
 
 						UiFont("regular.ttf", 26)
 
-						UiButtonImageBox(HasFile(data.img) and data.img or "vox/player/images/background.png", 0, 0, data.colR or 1, data.colG or 1, data.colB or 1, 1)
+						if HasFile(data.img) then
+							UiButtonImageBox(data.img, 0, 0, 1, 1, 1, 1)
+						else
+							UiButtonImageBox("vox/player/images/background.png", 0, 0, data.colR or 1, data.colG or 1, data.colB or 1, 1)
+						end
 
 						UiColor(1, 1, 1, 1)
 
