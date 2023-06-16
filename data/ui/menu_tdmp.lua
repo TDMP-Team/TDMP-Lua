@@ -1401,7 +1401,8 @@ function drawTDMP()
 
 			UiTranslate(-100 ,0)
 			if UiTextButton("tetst",bw,bh*1.5) then
-				popup = {type = 1, nick = "inviter", die = TDMP_FixedTime() + 5, animation = 0, lobby = "lobbyId"}
+				TDMP_CreateLobby(2)
+				--popup = {type = 1, nick = "inviter", die = TDMP_FixedTime() + 5, animation = 0, lobby = "lobbyId"}
 			end
 		UiPop()
 
@@ -1678,8 +1679,8 @@ function onLobbyInvite(inviter, lobbyId)
 end
 
 function receivePacket(isHost, senderId, packet)
+	TDMP_Print(senderId, packet)
 	if isHost and (not amIhost) then
-		TDMP_Print(senderId, packet)
 		TDMP_Print("host?:", isHost and "yes" or "no")
 
 		local pDecoded = json.decode(packet)
