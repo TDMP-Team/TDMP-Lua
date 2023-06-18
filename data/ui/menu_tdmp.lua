@@ -1774,9 +1774,9 @@ function draw()
 	UiPush()
 		local version
 		if tdPatch ~= "" then
-			version = "Teardown" .. tdVersion .. " (" .. tdPatch .. ") with TDMP " .. tdmpVersion
+			version = "Teardown " .. tdVersion .. " (" .. tdPatch .. ") with TDMP " .. tdmpVersion
 		else
-			version = "Teardown" .. tdVersion .. " with TDMP " .. tdmpVersion
+			version = "Teardown " .. tdVersion .. " with TDMP " .. tdmpVersion
 		end
 		UiTranslate(UiWidth()-10, UiHeight()-10)
 		UiFont("regular.ttf", 18)
