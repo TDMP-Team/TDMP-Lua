@@ -297,6 +297,40 @@ function contextMenu()
 	return open
 end
 
+function openPlayerContext(nick, steamid)
+	local buttons = {}
+
+	if steamid ~= TDMP_LocalSteamID then
+		buttons[#buttons + 1] = {
+			text = "Ban",
+			click = function()
+				yesNoInit("Are you sure that you want to ban " .. nick .. "?","",function()
+					TDMP_Print("ban", steamid)
+
+					addChatMessage(systemPrefix, "Banned " .. nick)
+				end)
+			end
+		}
+
+		buttons[#buttons + 1] = {
+			text = "Kick",
+			click = function()
+				TDMP_KickPlayer(steamid)
+
+				addChatMessage(systemPrefix, "Kicked " .. nick)
+			end
+		}
+	end
+	buttons[#buttons + 1] = {
+		text = "Open profile",
+		click = function()
+			TDMP_OpenProfile(steamid)
+		end
+	}
+
+	openContextMenu(buttons)
+end
+
 local chatInput = ""
 local keys = {
     "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
@@ -1466,30 +1500,7 @@ function drawTDMP()
 						
 						if message.senderId ~= systemPrefix then
 							if UiTextButton(message.nick .. ":") then
-								openContextMenu({
-									{
-										text = "Ban",
-										click = function()
-											TDMP_Print("ban", message.senderId)
-
-											addChatMessage(systemPrefix, "Banned " .. message.nick)
-										end
-									},
-									{
-										text = "Kick",
-										click = function()
-											TDMP_KickPlayer(message.senderId)
-
-											addChatMessage(systemPrefix, "Kicked " .. message.nick)
-										end
-									},
-									{
-										text = "Open profile",
-										click = function()
-											TDMP_OpenProfile(message.senderId)
-										end
-									},
-								})
+								openPlayerContext(message.nick, message.senderId)
 							end
 						else
 							nickWidth = 0
