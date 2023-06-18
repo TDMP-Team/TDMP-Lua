@@ -236,7 +236,11 @@ local keys_upper = {
     "_","=","<",">","[","]"
 }
 
-local maxChatMessageLength = 48
+function trim(s)
+   return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+local maxChatMessageLength = 64
 function tick()
 	if GetTime() > 0.1 then
 		PlayMusic("menu-long.ogg")
@@ -267,10 +271,14 @@ function tick()
     end
 
     if InputPressed("return") and #chatInput > 0 then
-    	sendPacket({
-    		t = 20,
-    		m = chatInput
-    	})
+    	chatInput = trim(chatInput:gsub("%s+", " "))
+
+    	if #chatInput > 0 then
+	    	sendPacket({
+	    		t = 20,
+	    		m = chatInput
+	    	})
+	    end
 
         chatInput = ""
     end
@@ -1229,6 +1237,19 @@ function drawPlayers()
 	end
 end
 
+local function stringToTable(str, sep)
+	if not sep then
+		sep = "%s"
+	end
+
+	local t = {}
+	for str in string.gmatch(str, "([^"..sep.."]+)") do
+		t[#t + 1] = str
+	end
+
+	return t
+end
+
 local chatMessages = {}
 local chatRandomColors = {}
 local maxChatMessages = 7
@@ -1246,9 +1267,17 @@ function addChatMessage(steamidSender, message)
 	chatMessages[#chatMessages + 1] = {
 		senderId = steamidSender,
 		nick = TDMP_GetPlayerNameBySteamId(steamidSender),
-		text = message
+		text = message,
+		textTable = stringToTable(message)
 	}
 end
+
+addChatMessage("76561198132964487", "123")
+addChatMessage("76561198130135975", "321")
+addChatMessage("76561198132964487", "123 23948238 23948 23894 72398 423894723942398 4237498 237948237 49234923234")
+addChatMessage("76561198132964487", "555")
+addChatMessage("76561198130135975", "asd sdfg 23948238 23948 23894 72398 423894723942398 4237498 237948237 49234923234")
+addChatMessage("76561198132964487", "555")
 
 local white = {r = 1, g = 1, b = 1}
 function getSenderColor(id)
@@ -1333,31 +1362,66 @@ function drawTDMP()
 		UiPush()
 			UiTranslate(445, modsHeight)
 
-			local w = local_w - 438 - 418 - 82
-			UiWindow(w, subBoxH - modsHeight, true)
+			local w, h = local_w - 438 - 418 - 82, subBoxH - modsHeight
+			UiWindow(w, h, true)
 			UiImageBox("common/box-solid-10.png", UiWidth(), UiHeight(), 4, 4)
 			w = w - 20
 
 			UiTranslate(10, 10)
 			UiColor(0.96, 0.96, 0.96)
 			UiText("Chat")
+			UiTranslate(0, 30)
 
 			UiPush()
-				for i, message in ipairs(chatMessages) do
-					UiTranslate(0, 30)
+				UiWindow(w - 20, h - 60, true, true)
 
-					local col = getSenderColor(message.senderId)
-					UiColor(col.r, col.g, col.b)
-					local w = UiText(message.nick .. ":")
+				UiTranslate(0, -30)
+				UiTranslate(0, 30*maxChatMessages)
+				for i=#chatMessages, 1, -1 do
+					local message = chatMessages[i]
 
-					UiTranslate(w + 1)
+					local nickWidth = UiGetTextSize(message.nick .. ":")
+					local messageWidth = UiGetTextSize(message.text)
+					local currentWidth = nickWidth + 1
+					local isWrapRequired = currentWidth + messageWidth + 10 > w
 
-					UiColor(0.96, 0.96, 0.96)
-					UiText(message.text)
+					if isWrapRequired then
+						UiTranslate(0, -30)
+					end
+					local lines = 1
+					UiPush()
+						local col = getSenderColor(message.senderId)
+						UiColor(col.r, col.g, col.b)
+						UiText(message.nick .. ":")
 
-					UiTranslate(-(w + 1))
+						UiTranslate(nickWidth + 1)
+
+						UiColor(0.96, 0.96, 0.96)
+
+						if isWrapRequired then
+							for i, word in ipairs(message.textTable) do
+								local wordWidth = UiGetTextSize(word)
+								currentWidth = currentWidth + wordWidth + 1
+
+								if currentWidth >= w - 20 then
+									UiTranslate(-currentWidth + wordWidth + 1, 30)
+									currentWidth = wordWidth + 1
+
+									lines = lines + 1
+								end
+
+								UiText(word)
+								UiTranslate(wordWidth + 1, 0)
+							end
+						else
+							UiText(message.text)
+						end
+					UiPop()
+
+					UiTranslate(0, -30)
 				end
 			UiPop()
+			UiTranslate(0, -30)
 
 			UiTranslate(0, 30*8)
 
@@ -1365,7 +1429,6 @@ function drawTDMP()
 			UiButtonImageBox("common/box-solid-4.png", 4, 4, 1, 1, 1, 0.1)
 			UiTextButton(" ", w, 30)
 			UiText(chatInput == "" and "Type a message and then press Enter" or chatInput)
-
 		UiPop()
 
 		-- UiTranslate((local_w-25-25-438)/2, 0)
