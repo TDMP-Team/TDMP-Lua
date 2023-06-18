@@ -1472,7 +1472,7 @@ function drawTDMP()
 										click = function()
 											TDMP_Print("ban", message.senderId)
 
-											addChatMessage(systemPrefix, "Banned " .. message.senderId)
+											addChatMessage(systemPrefix, "Banned " .. message.nick)
 										end
 									},
 									{
@@ -1480,7 +1480,7 @@ function drawTDMP()
 										click = function()
 											TDMP_KickPlayer(message.senderId)
 
-											addChatMessage(systemPrefix, "Kicked " .. message.senderId)
+											addChatMessage(systemPrefix, "Kicked " .. message.nick)
 										end
 									},
 									{
@@ -1492,7 +1492,7 @@ function drawTDMP()
 								})
 							end
 						else
-							UiTextButton(systemPrefix .. ":")
+							nickWidth = 0
 						end
 
 						UiTranslate(nickWidth + 1)
