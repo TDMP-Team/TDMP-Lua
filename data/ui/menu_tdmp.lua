@@ -1240,7 +1240,7 @@ function addChatMessage(steamidSender, message)
 	end
 
 	if not chatRandomColors[steamidSender] then
-		chatRandomColors[steamidSender] = {r = math.random(0, 1), g = math.random(0, 1), b = math.random(0, 1)}
+		chatRandomColors[steamidSender] = {r = math.random(), g = math.random(), b = math.random()}
 	end
 
 	chatMessages[#chatMessages + 1] = {
