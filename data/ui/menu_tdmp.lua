@@ -1311,10 +1311,10 @@ function drawTDMP()
 				-- UiTranslate(0, bo)
 				UiColor(1, .5, .5, 1)
 				-- local isOwner = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
-				if UiTextButton(amIhost and "Re-create lobby" or "Leave lobby", bw, bh*1.5) then
+				if UiTextButton("Leave lobby", bw, bh*1.5) then
 					UiSound("common/click.ogg")
 
-					yesNoInit("Are you sure that you want to " .. (amIhost and "re-create" or "leave") .. " the lobby?","",function()
+					yesNoInit("Are you sure that you want to leave the lobby?","",function()
 						TDMP_LeaveLobby()
 					end)
 				end
@@ -1511,7 +1511,7 @@ function drawTDMP()
 			end
 			if amIhost then
 				local bText = ""
-				if tdmpSelectedMap then bText = "Start" else bText = "Select Map" end
+				if tdmpSelectedMap then bText = "Start" else bText = "Select a Map" end
 				if UiTextButton(bText, bw, bh*1.5) and (tdmpSelectedMap and not tdmpStartFlag) then
 					UiSound("common/click.ogg")
 					tdmpStartFlag = true
@@ -1529,10 +1529,12 @@ function drawTDMP()
 				end			
 			end
 
-			UiTranslate(-100 ,0)
-			if UiTextButton("tetst",bw,bh*1.5) then
-				TDMP_CreateLobby(2)
-				--popup = {type = 1, nick = "inviter", die = TDMP_FixedTime() + 5, animation = 0, lobby = "lobbyId"}
+			if not inLobby then
+				UiTranslate(-220 ,0)
+				if UiTextButton("Host a lobby",bw,bh*1.5) then
+					TDMP_CreateLobby(2)
+					--popup = {type = 1, nick = "inviter", die = TDMP_FixedTime() + 5, animation = 0, lobby = "lobbyId"}
+				end
 			end
 		UiPop()
 
@@ -1843,20 +1845,10 @@ function receivePacket(isHost, senderId, packet)
 		-- 	id = pDecoded.m,
 		-- 	isMod = (pDecoded.t == "s") and true or false
 		-- }
-	elseif isHost and amIhost then
-		if pDecoded.t == 20 and pDecoded.m and not pDecoded.s then
-			local msg = string.sub(pDecoded.m, 1, maxChatMessageLength)
-
-			sendPacket({
-				t = 20,
-				s = senderId,
-				m = msg
-			})
-		end
 	end
 
-	if pDecoded.t == 20 and pDecoded.m and pDecoded.s then
-		addChatMessage(pDecoded.s, pDecoded.m)
+	if pDecoded.t == 20 and pDecoded.m then
+		addChatMessage(senderId, string.sub(pDecoded.m, 1, maxChatMessageLength))
 	end
 end
 
