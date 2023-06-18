@@ -3,6 +3,7 @@
 #include "score.lua"
 
 #include "../tdmp/json.lua"
+#include "../tdmp/utilities.lua"
 
 -- background stuff
 bgItems = {nil, nil}
@@ -10,6 +11,8 @@ bgCurrent = 0
 bgIndex = 0
 bgInterval = 10
 bgTimer = bgInterval
+
+contextScale = 0
 
 function bgLoad(i)
 	bg = {}
@@ -222,6 +225,76 @@ function topBar()
 		UiPop()
 	UiPop()
 
+end
+
+local contextPosX, contextPosY = 0, 0
+local contextMenuButtons = {}
+function openContextMenu(buttons)
+	contextMenuButtons = buttons
+
+	SetValue("contextScale", 1, "bounce", 0.35)
+end
+
+function closeContextMenu()
+	contextPosX, contextPosY = 0, 0
+	contextMenuButtons = {}
+	contextScale = 0
+end
+
+function contextMenu()
+	if #contextMenuButtons == 0 then return end
+
+	local open = true
+	UiModalBegin()
+	UiPush()
+		local w = 135
+		local h = 38 + 22*(#contextMenuButtons-1)
+
+		local x = contextPosX
+		local y = contextPosY
+		UiTranslate(x, y)
+		UiAlign("left top")
+		UiScale(1, contextScale)
+		UiWindow(w, h, true)
+		UiColor(0.2,0.2,0.2,1)
+		UiImageBox("common/box-solid-6.png", w, h, 6, 6)
+		UiColor(1, 1, 1)
+		UiImageBox("common/box-outline-6.png", w, h, 6, 6, 1)
+
+		--lmb click outside
+		if InputPressed("esc") or (not UiIsMouseInRect(w, h) and InputPressed("lmb")) then
+			open = false
+		end
+
+		--rmb click outside
+		if InputPressed("esc") or (not UiIsMouseInRect(w, h) and InputPressed("rmb")) then
+			return false
+		end
+
+		--Indent 12,8
+		w = w - 24
+		h = h - 16
+		UiTranslate(12, 8)
+		UiFont("regular.ttf", 22)
+		UiColor(1,1,1,0.5)
+
+		for i, button in ipairs(contextMenuButtons) do
+			if UiIsMouseInRect(w, 22) then
+				UiColor(1,1,1,0.2)
+				UiRect(w, 22)
+				if InputPressed("lmb") then
+					button.click()
+					open = false
+				end
+			end
+			UiColor(1,1,1,1)
+			UiText(button.text)
+			UiTranslate(0, 22)
+		end
+	UiPop()
+	UiModalEnd()
+
+	return open
 end
 
 local chatInput = ""
@@ -1250,8 +1323,12 @@ local function stringToTable(str, sep)
 	return t
 end
 
+local white = {r = 1, g = 1, b = 1}
+local systemPrefix = "System"
 local chatMessages = {}
-local chatRandomColors = {}
+local chatRandomColors = {
+	[systemPrefix] = white
+}
 local maxChatMessages = 7
 function addChatMessage(steamidSender, message)
 	message = string.sub(message, 1, maxChatMessageLength)
@@ -1261,23 +1338,17 @@ function addChatMessage(steamidSender, message)
 	end
 
 	if not chatRandomColors[steamidSender] then
-		chatRandomColors[steamidSender] = {r = math.random(), g = math.random(), b = math.random()}
+        local r, g, b = hsv2rgb(math.random(), math.random(25,75)/100, 1)
+		chatRandomColors[steamidSender] = {r = r, g = g, b = b}
 	end
 
 	chatMessages[#chatMessages + 1] = {
 		senderId = steamidSender,
-		nick = TDMP_GetPlayerNameBySteamId(steamidSender),
+		nick = steamidSender == systemPrefix and systemPrefix or TDMP_GetPlayerNameBySteamId(steamidSender),
 		text = message,
 		textTable = stringToTable(message)
 	}
 end
-
-addChatMessage("76561198132964487", "123")
-addChatMessage("76561198130135975", "321")
-addChatMessage("76561198132964487", "123 23948238 23948 23894 72398 423894723942398 4237498 237948237 49234923234")
-addChatMessage("76561198132964487", "555")
-addChatMessage("76561198130135975", "asd sdfg 23948238 23948 23894 72398 423894723942398 4237498 237948237 49234923234")
-addChatMessage("76561198132964487", "555")
 
 local white = {r = 1, g = 1, b = 1}
 function getSenderColor(id)
@@ -1392,7 +1463,37 @@ function drawTDMP()
 					UiPush()
 						local col = getSenderColor(message.senderId)
 						UiColor(col.r, col.g, col.b)
-						UiText(message.nick .. ":")
+						
+						if message.senderId ~= systemPrefix then
+							if UiTextButton(message.nick .. ":") then
+								openContextMenu({
+									{
+										text = "Ban",
+										click = function()
+											TDMP_Print("ban", message.senderId)
+
+											addChatMessage(systemPrefix, "Banned " .. message.senderId)
+										end
+									},
+									{
+										text = "Kick",
+										click = function()
+											TDMP_KickPlayer(message.senderId)
+
+											addChatMessage(systemPrefix, "Kicked " .. message.senderId)
+										end
+									},
+									{
+										text = "Open profile",
+										click = function()
+											TDMP_OpenProfile(message.senderId)
+										end
+									},
+								})
+							end
+						else
+							UiTextButton(systemPrefix .. ":")
+						end
 
 						UiTranslate(nickWidth + 1)
 
@@ -1649,6 +1750,15 @@ function draw()
 		end
 
 	UiPop()
+
+	if contextPosX == 0 and contextPosY == 0 then
+		contextPosX, contextPosY = UiGetMousePos()
+	end
+	if not contextMenu() then
+		closeContextMenu()
+
+		contextPosX, contextPosY = 0, 0
+	end
 
 	UiPush()
 		local version
