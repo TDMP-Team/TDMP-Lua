@@ -236,7 +236,7 @@ local keys_upper = {
     "_","=","<",">","[","]"
 }
 
-local maxChatMessageLength = 32
+local maxChatMessageLength = 48
 function tick()
 	if GetTime() > 0.1 then
 		PlayMusic("menu-long.ogg")
@@ -1334,7 +1334,8 @@ function drawTDMP()
 			UiTranslate(445, modsHeight)
 
 			local w = local_w - 438 - 418 - 82
-			UiImageBox("common/box-solid-10.png", w, subBoxH - modsHeight, 4, 4)
+			UiWindow(w, subBoxH - modsHeight, true)
+			UiImageBox("common/box-solid-10.png", UiWidth(), UiHeight(), 4, 4)
 			w = w - 20
 
 			UiTranslate(10, 10)
