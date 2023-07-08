@@ -5,6 +5,7 @@
 #include "options_tdmp.lua"
 
 #include "../tdmp/json.lua"
+#include "../tdmp/utilities.lua"
 
 -- background stuff
 bgItems = {nil, nil}
@@ -12,6 +13,27 @@ bgCurrent = 0
 bgIndex = 0
 bgInterval = 10
 bgTimer = bgInterval
+
+contextScale = 0
+
+nextUpdate = 0
+
+local contextPosX, contextPosY = 0, 0
+local contextMenuButtons = {}
+
+local maxChatMessageLength = 64
+local chatInput = ""
+local keys = {
+    "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+    "1","2","3","4","5","6","7","8","9","0",
+    "-","+",",",".","[","]"
+}
+local keys_upper = {
+    "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+    "!","@","#","$","%","^","&","*","(",")",
+    "_","=","<",">","[","]"
+}
+
 
 function bgLoad(i)
 	bg = {}
@@ -367,12 +389,128 @@ function topBar()
 	end
 end
 
-nextUpdate = 0
+function openContextMenu(buttons)
+	contextMenuButtons = buttons
+
+	SetValue("contextScale", 1, "bounce", 0.35)
+end
+
+function closeContextMenu()
+	contextPosX, contextPosY = 0, 0
+	contextMenuButtons = {}
+	contextScale = 0
+end
+
+function contextMenu()
+	if #contextMenuButtons == 0 then return end
+
+	local open = true
+	UiModalBegin()
+	UiPush()
+		local w = 135
+		local h = 38 + 22*(#contextMenuButtons-1)
+
+		local x = contextPosX
+		local y = contextPosY
+		UiTranslate(x, y)
+		UiAlign("left top")
+		UiScale(1, contextScale)
+		UiWindow(w, h, true)
+		UiColor(0.2,0.2,0.2,1)
+		UiImageBox("common/box-solid-6.png", w, h, 6, 6)
+		UiColor(1, 1, 1)
+		UiImageBox("common/box-outline-6.png", w, h, 6, 6, 1)
+
+		--lmb click outside
+		if InputPressed("esc") or (not UiIsMouseInRect(w, h) and InputPressed("lmb")) then
+			open = false
+		end
+
+		--rmb click outside
+		if InputPressed("esc") or (not UiIsMouseInRect(w, h) and InputPressed("rmb")) then
+			return false
+		end
+
+		--Indent 12,8
+		w = w - 24
+		h = h - 16
+		UiTranslate(12, 8)
+		UiFont("regular.ttf", 22)
+		UiColor(1,1,1,0.5)
+
+		for i, button in ipairs(contextMenuButtons) do
+			if UiIsMouseInRect(w, 22) then
+				UiColor(1,1,1,0.2)
+				UiRect(w, 22)
+				if InputPressed("lmb") then
+					button.click()
+					open = false
+				end
+			end
+			UiColor(1,1,1,1)
+			UiText(button.text)
+			UiTranslate(0, 22)
+		end
+	UiPop()
+	UiModalEnd()
+
+	return open
+end
+
+function openPlayerContext(nick, steamid)
+	local buttons = {}
+
+	if steamid ~= TDMP_LocalSteamID then
+		buttons[#buttons + 1] = {
+			text = "Ban",
+			click = function()
+				yesNoInit("Are you sure that you want to ban " .. nick .. "?","",function()
+					TDMP_Print("ban", steamid)
+
+					addChatMessage(systemPrefix, "Banned " .. nick)
+				end)
+			end
+		}
+
+		buttons[#buttons + 1] = {
+			text = "Kick",
+			click = function()
+				TDMP_KickPlayer(steamid)
+
+				addChatMessage(systemPrefix, "Kicked " .. nick)
+			end
+		}
+	end
+	buttons[#buttons + 1] = {
+		text = "Open profile",
+		click = function()
+			TDMP_OpenProfile(steamid)
+		end
+	}
+
+	openContextMenu(buttons)
+end
+
+function trim(s)
+   return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
 
 function tick()
 	if GetTime() > 0.1 then
 		PlayMusic("menu-long.ogg")
 		SetFloat("game.music.volume", 0.5)
+	end
+
+	if not nextRefresh or GetTime() > nextRefresh then
+		nextRefresh = GetTime() + 1
+
+		TDMP_SetLobbyActiveModsCount(1)
+		TDMP_RefreshLobbiesList()
+
+		for i, lobbyData in pairs(TDMP_GetLobbies()) do
+			TDMP_Print("Lobby ID: " .. lobbyData.id .. "; Lobby name: " .. lobbyData.name)
+		end
 	end
 
 	inLobby = TDMP_IsLobbyValid()
@@ -427,6 +565,52 @@ function tick()
     --          TDMP_Print(lobby.id .. "/ " .. lobby.name .. ":")
     --     end
     -- end
+
+    if InputPressed("space") then
+        chatInput = chatInput .. " "
+    end
+
+    if InputPressed("backspace") then
+        chatInput = removeLastChar(chatInput)
+    end
+
+    if InputPressed("return") and #chatInput > 0 then
+    	chatInput = trim(chatInput:gsub("%s+", " "))
+
+    	if #chatInput > 0 then
+	    	sendPacket({
+	    		t = 20,
+	    		m = chatInput
+	    	})
+	    end
+
+        chatInput = ""
+    end
+
+    if InputDown("backspace") then
+        backspaceTime = backspaceTime + .1
+
+        if backspaceTime > 2 then
+            if math.floor(backspaceTime * 10) % 2 == 0 then
+                chatInput = removeLastChar(chatInput)
+            end
+        end
+    else
+        backspaceTime = 0
+    end
+
+	if #chatInput < maxChatMessageLength then
+	    local shift = InputDown("shift")
+	    for i, v in ipairs(keys) do
+	        if InputPressed(v) then
+	            chatInput = chatInput .. (shift and keys_upper[i] or v)
+	        end
+	    end
+	end
+end
+
+function removeLastChar(str)
+    return str:gsub("[%z\1-\127\194-\244][\128-\191]*$", "")
 end
 
 
@@ -1036,6 +1220,51 @@ function drawPlayers()
 	end
 end
 
+local function stringToTable(str, sep)
+	if not sep then
+		sep = "%s"
+	end
+
+	local t = {}
+	for str in string.gmatch(str, "([^"..sep.."]+)") do
+		t[#t + 1] = str
+	end
+
+	return t
+end
+
+local white = {r = 1, g = 1, b = 1}
+local systemPrefix = "System"
+local chatMessages = {}
+local chatRandomColors = {
+	[systemPrefix] = white
+}
+local maxChatMessages = 7
+function addChatMessage(steamidSender, message)
+	message = string.sub(message, 1, maxChatMessageLength)
+
+	if #chatMessages + 1 > maxChatMessages then
+		table.remove(chatMessages, 1)
+	end
+
+	if not chatRandomColors[steamidSender] then
+        local r, g, b = hsv2rgb(math.random(), math.random(25,75)/100, 1)
+		chatRandomColors[steamidSender] = {r = r, g = g, b = b}
+	end
+
+	chatMessages[#chatMessages + 1] = {
+		senderId = steamidSender,
+		nick = steamidSender == systemPrefix and systemPrefix or TDMP_GetPlayerNameBySteamId(steamidSender),
+		text = message,
+		textTable = stringToTable(message)
+	}
+end
+
+local white = {r = 1, g = 1, b = 1}
+function getSenderColor(id)
+	return chatRandomColors[id] or white
+end
+
 function drawLobby(scale)
 
 	local bw = 206
@@ -1095,10 +1324,10 @@ function drawLobby(scale)
 				-- UiTranslate(0, bo)
 				UiColor(1, .5, .5, 1)
 				-- local isOwner = TDMP_IsLobbyOwner(TDMP_LocalSteamID)
-				if UiTextButton(amIhost and "Re-create lobby" or "Leave lobby", bw, bh*1.5) then
+				if UiTextButton("Leave lobby", bw, bh*1.5) then
 					UiSound("common/click.ogg")
 
-					yesNoInit("Are you sure that you want to " .. (amIhost and "re-create" or "leave") .. " the lobby?","",function()
+					yesNoInit("Are you sure that you want to leave the lobby?","",function()
 						TDMP_LeaveLobby()
 					end)
 				end
@@ -1111,6 +1340,86 @@ function drawLobby(scale)
 				end
 				UiColor(1,1,1,1)
 			end
+		UiPop()
+
+		local modsHeight = ((subBoxH-15)/2-20) + 10 + 30 + 20
+		UiPush()
+			UiTranslate(445, modsHeight)
+
+			local w, h = local_w - 438 - 418 - 82, subBoxH - modsHeight
+			UiWindow(w, h, true)
+			UiImageBox("common/box-solid-10.png", UiWidth(), UiHeight(), 4, 4)
+			w = w - 20
+
+			UiTranslate(10, 10)
+			UiColor(0.96, 0.96, 0.96)
+			UiText("Chat")
+			UiTranslate(0, 30)
+
+			UiPush()
+				UiWindow(w - 20, h - 60, true, true)
+
+				UiTranslate(0, -30)
+				UiTranslate(0, 30*maxChatMessages)
+				for i=#chatMessages, 1, -1 do
+					local message = chatMessages[i]
+
+					local nickWidth = UiGetTextSize(message.nick .. ":")
+					local messageWidth = UiGetTextSize(message.text)
+					local currentWidth = nickWidth + 1
+					local isWrapRequired = currentWidth + messageWidth + 10 > w
+
+					if isWrapRequired then
+						UiTranslate(0, -30)
+					end
+					local lines = 1
+					UiPush()
+						local col = getSenderColor(message.senderId)
+						UiColor(col.r, col.g, col.b)
+						
+						if message.senderId ~= systemPrefix then
+							if UiTextButton(message.nick .. ":") then
+								openPlayerContext(message.nick, message.senderId)
+							end
+						else
+							nickWidth = 0
+						end
+
+						UiTranslate(nickWidth + 1)
+
+						UiColor(0.96, 0.96, 0.96)
+
+						if isWrapRequired then
+							for i, word in ipairs(message.textTable) do
+								local wordWidth = UiGetTextSize(word)
+								currentWidth = currentWidth + wordWidth + 1
+
+								if currentWidth >= w - 20 then
+									UiTranslate(-currentWidth + wordWidth + 1, 30)
+									currentWidth = wordWidth + 1
+
+									lines = lines + 1
+								end
+
+								UiText(word)
+								UiTranslate(wordWidth + 1, 0)
+							end
+						else
+							UiText(message.text)
+						end
+					UiPop()
+
+					UiTranslate(0, -30)
+				end
+			UiPop()
+			UiTranslate(0, -30)
+
+			UiTranslate(0, 30*8)
+
+			UiColor(1,1,1,0.8)
+			UiButtonImageBox("common/box-solid-4.png", 4, 4, 1, 1, 1, 0.1)
+			UiTextButton(" ", w, 30)
+			UiText(chatInput == "" and "Type a message and then press Enter" or chatInput)
 		UiPop()
 
 		-- UiTranslate((local_w-25-25-438)/2, 0)
@@ -1133,7 +1442,6 @@ function drawLobby(scale)
 				SetValue("modSelectionPopup", 1, "cosine", 0.25)
 			end
 		UiPop()
-		
 
 		-- UiAlign("top left")
 		-- UiTranslate((local_w-25-25-438)/2, 0)
@@ -1279,7 +1587,7 @@ function drawLobby(scale)
 			end
 			if amIhost then
 				local bText = ""
-				if tdmpSelectedMap then bText = "Start" else bText = "Select Map" end
+				if tdmpSelectedMap then bText = "Start" else bText = "Select a Map" end
 				if UiTextButton(bText, bw, bh*1.5) and (tdmpSelectedMap and not tdmpStartFlag) then
 					UiSound("common/click.ogg")
 					tdmpStartFlag = true
@@ -1296,14 +1604,22 @@ function drawLobby(scale)
 				end			
 			end
 
-			UiTranslate(-200 ,0)
-			if UiTextButton("create lobby",bw,bh*1.5) then
-				TDMP_CreateLobby(2)
+			-- UiTranslate(-200 ,0)
+			-- if UiTextButton("create lobby",bw,bh*1.5) then
+			-- 	TDMP_CreateLobby(2)
 				-- 0 private
 				-- 1 friends/invitees
 				-- 2 public
 
 				--popup = {type = 1, nick = "inviter", die = TDMP_FixedTime() + 5, animation = 0, lobby = "lobbyId"}
+
+			if not inLobby then
+				UiTranslate(-220 ,0)
+				if UiTextButton("Host a lobby",bw,bh*1.5) then
+					TDMP_CreateLobby(2)
+					--popup = {type = 1, nick = "inviter", die = TDMP_FixedTime() + 5, animation = 0, lobby = "lobbyId"}
+				end
+
 			end
 
 			UiTranslate(-200 ,0)
@@ -1711,6 +2027,15 @@ function draw()
 
 	UiPop()
 
+	if contextPosX == 0 and contextPosY == 0 then
+		contextPosX, contextPosY = UiGetMousePos()
+	end
+	if not contextMenu() then
+		closeContextMenu()
+
+		contextPosX, contextPosY = 0, 0
+	end
+
 	UiPush()
 		local version
 		if tdPatch ~= "" then
@@ -2106,14 +2431,13 @@ function onLobbyInvite(inviter, lobbyId)
 	end
 end
 
+
 function receivePacket(isHost, senderId, packet)
 	TDMP_Print(senderId, packet)
 	local pDecoded = json.decode(packet)
 	if isHost and (not amIhost) then
 		TDMP_Print("host?:", isHost and "yes" or "no")
 
-
-		
 		if pDecoded.t == 0 then
 			for i,v in pairs(gMods[4].items) do
 				if v.id == pDecoded.m then
@@ -2146,6 +2470,11 @@ function receivePacket(isHost, senderId, packet)
 			end
 		elseif pDecoded.t == 11 then
 			tdmpDownloaderStatus = 1
+		elseif pDecoded.t == 12 and (pDecoded.c == pDecoded.m) then
+			tdmpDownloaderPlayerStatus[senderId] = {s = true}
+			-- DebugPrint(senderId)
+		elseif pDecoded.t == 12 and (pDecoded.c ~= pDecoded.m) then
+			tdmpDownloaderPlayerStatus[senderId] = {c = pDecoded.c, m = pDecoded.m, s = false}
 		end
 		-- tdmpSelectedMap = {
 		-- 	name = pDecoded.n,
@@ -2153,11 +2482,8 @@ function receivePacket(isHost, senderId, packet)
 		-- 	isMod = (pDecoded.t == "s") and true or false
 		-- }
 	end
-	if pDecoded.t == 12 and (pDecoded.c == pDecoded.m) then
-		tdmpDownloaderPlayerStatus[senderId] = {s = true}
-		-- DebugPrint(senderId)
-	elseif pDecoded.t == 12 and (pDecoded.c ~= pDecoded.m) then
-		tdmpDownloaderPlayerStatus[senderId] = {c = pDecoded.c, m = pDecoded.m, s = false}
+	if pDecoded.t == 20 and pDecoded.m then
+		addChatMessage(senderId, string.sub(pDecoded.m, 1, maxChatMessageLength))
 	end
 end
 
