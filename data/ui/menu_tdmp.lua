@@ -33,7 +33,14 @@ local keys_upper = {
     "!","@","#","$","%","^","&","*","(",")",
     "_","=","<",">","[","]"
 }
-
+local white = {r = 1, g = 1, b = 1}
+local systemPrefix = "System"
+local chatMessages = {}
+local chatRandomColors = {
+	[systemPrefix] = white
+}
+local maxChatMessages = 7
+local white = {r = 1, g = 1, b = 1}
 
 function bgLoad(i)
 	bg = {}
@@ -494,7 +501,6 @@ end
 function trim(s)
    return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
-
 
 function tick()
 	if GetTime() > 0.1 then
@@ -1220,7 +1226,7 @@ function drawPlayers()
 	end
 end
 
-local function stringToTable(str, sep)
+function stringToTable(str, sep)
 	if not sep then
 		sep = "%s"
 	end
@@ -1233,13 +1239,6 @@ local function stringToTable(str, sep)
 	return t
 end
 
-local white = {r = 1, g = 1, b = 1}
-local systemPrefix = "System"
-local chatMessages = {}
-local chatRandomColors = {
-	[systemPrefix] = white
-}
-local maxChatMessages = 7
 function addChatMessage(steamidSender, message)
 	message = string.sub(message, 1, maxChatMessageLength)
 
@@ -1260,7 +1259,6 @@ function addChatMessage(steamidSender, message)
 	}
 end
 
-local white = {r = 1, g = 1, b = 1}
 function getSenderColor(id)
 	return chatRandomColors[id] or white
 end
@@ -1385,7 +1383,7 @@ function drawLobby(scale)
 							nickWidth = 0
 						end
 
-						UiTranslate(nickWidth + 1)
+						UiTranslate(nickWidth + 1, 0)
 
 						UiColor(0.96, 0.96, 0.96)
 
@@ -1424,7 +1422,7 @@ function drawLobby(scale)
 
 		-- UiTranslate((local_w-25-25-438)/2, 0)
 		UiTranslate((local_w-25-25)/2-150, 0)
-		UiImageBox("common/box-solid-10.png", 300, (subBoxH-15)/2+30+10+bh, 10, 10)
+		UiImageBox("common/box-solid-10.png", 300, (subBoxH-15)/2+30+10+bh-22*2, 10, 10)
 
 		UiPush()
 			UiTranslate(10, 10)
@@ -1433,8 +1431,8 @@ function drawLobby(scale)
 			UiText("Active Mods")
 			UiTranslate(0, 30)
 			UiColor(1, 1, 1, 1)
-			listMods(gMods[7], 300-20, (subBoxH-15)/2-20, true)
-			UiTranslate(0, (subBoxH-15)/2-20+10)
+			listMods(gMods[7], 300-20, (subBoxH-15)/2-20-22*2, true)
+			UiTranslate(0, (subBoxH-15)/2-20+10-22*2)
 			UiColor(1,1,1)
 			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
 			UiFont("regular.ttf", 26)
