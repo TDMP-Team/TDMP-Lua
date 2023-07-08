@@ -2,6 +2,8 @@
 #include "options.lua"
 #include "score.lua"
 
+#include "options_tdmp.lua"
+
 #include "../tdmp/json.lua"
 
 -- background stuff
@@ -122,6 +124,17 @@ function init()
 	gMods[2].modType = "S"
 	gMods[6].modType = "G"
 
+	lobbyListRaw = {}
+	lobbyList = {
+		items = {},
+		pos = 0,
+		possmooth = 0,
+		sort = 1,
+		filter = 0,
+		dragstarty = 0,
+		isdragging = false,
+		-- sort = 0
+	}
 	-- gModSelected = ""
 	-- gModSelectedScale = 0
 
@@ -137,6 +150,13 @@ function init()
 	tdmpSelectedMapList = 0
 	tdmpDownloaderStatus = 0
 	tdmpDownloaderPlayerStatus = {}
+	playSelectMenu = 0
+
+	gOptionsScale = 0
+
+	modSelectionPopup = 0
+	drawLobbyScale = 0
+	drawBrowserScale = 0
 
 	tdmpVersion = TDMP_Version()
 	tdVersion = GetString("game.version")
@@ -150,10 +170,27 @@ function init()
 	end
 
 	gDeploy = GetBool("game.deploy")
+
+
+	for i=1, 64 do
+		lobbyListRaw[#lobbyListRaw+1] = {
+			name = "Drandom lobby name, no ".. i,
+			mapName = (math.random(0,10) < 10) and "coolmap"..32-i or "",
+			id = i,
+			ping = math.random(0, 500),
+			activeMods = math.random(0, 32),
+			playersCount = math.random(0, 16),
+			isPrivate = (math.random(0, 1)==1),
+			maxPlayers = 8
+		}
+	end
+	-- sortLobbies(lobbyList.sort)
+
+	lobbyList.items = lobbyListRaw
 end
 
 -- createScale = 0
-modSelectionPopup = 0
+
 
 function topBar()
 	UiPush()
@@ -179,15 +216,23 @@ function topBar()
 			local bo = 56
 
 			UiPush()
+				-- if UiTextButton("Play", 250, bh) then
+				-- 	UiSound("common/click.ogg")
+				-- 	promoShow()
+				-- 	if createScale <= 0 then
+				-- 		-- SetValue("drawLobbyScale", 1, "cosine", 0.25)
+				-- 		gModSelectedScale=0
+				-- 	else
+				-- 		createScale = 0
+				-- 	end
+				-- end
 				if UiTextButton("Play", 250, bh) then
 					UiSound("common/click.ogg")
-					-- promoShow()
-					-- if createScale <= 0 then
-						SetValue("modSelectionPopup", 1, "cosine", 0.25)
-						-- gModSelectedScale=0
-					-- else
-					-- 	createScale = 0
-					-- end
+					if playSelectMenu == 0 then
+						SetValue("playSelectMenu", 1.0, "easeout", 0.25)
+					else
+						SetValue("playSelectMenu", 0.0, "easein", 0.25)
+					end
 				end
 			UiPop()
 			
@@ -199,7 +244,7 @@ function topBar()
 				if UiTextButton("Options", 250, bh) then
 					UiSound("common/click.ogg")
 					SetValue("gOptionsScale", 1.0, "easeout", 0.25)
-					SetValue("gPlayScale", 0.0, "easein", 0.25)
+					SetValue("playSelectMenu", 0.0, "easein", 0.25)
 				end
 			UiPop()
 
@@ -209,7 +254,7 @@ function topBar()
 				if UiTextButton("Credits", 250, bh) then
 					UiSound("common/click.ogg")
 					StartLevel("about", "about.xml")
-					SetValue("gPlayScale", 0.0, "easein", 0.25)
+					SetValue("playSelectMenu", 0.0, "easein", 0.25)
 				end
 			UiPop()
 				
@@ -219,13 +264,110 @@ function topBar()
 				if UiTextButton("Quit", 250, bh) then
 					UiSound("common/click.ogg")
 					Command("game.quit")
-					SetValue("gPlayScale", 0.0, "easein", 0.25)
+					SetValue("playSelectMenu", 0.0, "easein", 0.25)
 				end
 			UiPop()
 		UiPop()
 	UiPop()
+	
+	if playSelectMenu > 0 then
+		local bw = 206
+		local bh = 40
+		local bo = 48
+		UiPush()
+			UiTranslate(672, 160)
+			UiScale(1, playSelectMenu)
+			UiColorFilter(1,1,1,playSelectMenu)
+			if playSelectMenu < 0.5 then
+				UiColorFilter(1,1,1,playSelectMenu*2)
+			end
+			UiColor(0,0,0,0.75)
+			UiFont("regular.ttf", 26)
+			UiImageBox("common/box-solid-10.png", 256, 2*(bo+25), 10, 10)
+			UiColor(1,1,1)
+			UiButtonImageBox("common/box-outline-6.png", 6, 6, 1, 1, 1)
 
+			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
+			UiColor(0.96, 0.96, 0.96)
+
+			UiAlign("top left")
+			UiTranslate(25, 25)
+
+			if UiTextButton("Create lobby", bw, bh) then
+				UiSound("common/click.ogg")
+				-- startHub()
+				SetValue("drawLobbyScale", 1, "cosine", 0.25)
+				SetValue("playSelectMenu", 0.0, "easein", 0.25)
+			end	
+			UiTranslate(0, bo)
+
+			if UiTextButton("Lobby browser", bw, bh) then
+				UiSound("common/click.ogg")
+				SetValue("playSelectMenu", 0.0, "easein", 0.25)
+				SetValue("drawBrowserScale", 1, "cosine", 0.25)
+			end			
+			-- UiTranslate(0, bo)
+
+			-- if UiTextButton("Challenges", bw, bh) then
+			-- 	UiSound("common/click.ogg")
+			-- 	SetValue("gChallengesScale", 1, "cosine", 0.25)
+			-- 	gChallengeLevel = ""
+			-- 	gChallengeLevelScale = 0
+			-- end			
+			-- UiTranslate(0, bo)
+			
+			-- if UiTextButton("Expansions", bw, bh) then
+			-- 	UiSound("common/click.ogg")
+			-- 	SetValue("gExpansionsScale", 1, "cosine", 0.25)
+			-- 	gChallengeLevel = ""
+			-- 	gChallengeLevelScale = 0
+			-- end			
+			-- UiTranslate(0, bo)
+
+			-- UiTranslate(0, 22)
+
+			-- UiPush()
+			-- 	if not GetBool("promo.available") then
+			-- 		UiDisableInput()
+			-- 		UiColorFilter(1,1,1,0.5)
+			-- 	end
+			-- 	if UiTextButton("Featured mods", bw, bh) then
+			-- 		UiSound("common/click.ogg")
+			-- 		promoShow()
+			-- 	end
+			-- 	if GetBool("savegame.promoupdated") then
+			-- 		UiPush()
+			-- 			UiTranslate(200, 0)
+			-- 			UiAlign("center middle")
+			-- 			UiImage("menu/promo-notification.png")
+			-- 		UiPop()
+			-- 	end
+			-- UiPop()
+			-- UiTranslate(0, bo)
+			-- if UiTextButton("Mod manager", bw, bh) then
+			-- 	UiSound("common/click.ogg")
+			-- 	SetValue("gCreateScale", 1, "cosine", 0.25)
+			-- 	gModSelectedScale=0
+			-- 	updateMods()
+			-- 	selectMod("")
+			-- end			
+		UiPop()
+	end
+	if gOptionsScale > 0 then
+		UiPush()
+			UiBlur(gOptionsScale)
+			UiColor(0.7,0.7,0.7, 0.25*gOptionsScale)
+			UiRect(UiWidth(), UiHeight())
+			UiModalBegin()
+			if not drawOptions(gOptionsScale, true) then
+				SetValue("gOptionsScale", 0, "cosine", 0.25)
+			end
+			UiModalEnd()
+		UiPop()
+	end
 end
+
+nextUpdate = 0
 
 function tick()
 	if GetTime() > 0.1 then
@@ -239,6 +381,10 @@ function tick()
 	members = TDMP_GetLobbyMembers()
 	
 	DebugWatch("down stat", tdmpDownloaderStatus)
+	DebugWatch("inLobby", inLobby)
+	DebugWatch("serverExists", serverExists)
+	DebugWatch("amIhost", amIhost)
+	
 	if tdmpDownloaderStatus == 1 then
 		modDownloadTick()
 	end
@@ -252,9 +398,35 @@ function tick()
 			end
 		end
 		if playersReady == playerNo then
+			tdmpStartFlag = false
+			tdmpDownloaderPlayerStatus = {}
 			tdmpStartGame()
 		end
 	end
+
+	-- tick()
+	-- TDMP_RefreshLobbiesList()
+	-- lobbyList.items = {}
+	-- for i, lobby in ipairs(TDMP_GetLobbies()) do
+	-- lobbyList.items[#lobbyList+1] = lobby
+	-- TDMP_Print(lobby.id .. "/ " .. lobby.name, TDMP_GetLobbyData(lobby.id).mapName)
+	-- end
+
+	
+	
+	-- if nextUpdate < GetTime() then
+	-- 	TDMP_Print("lobby list update")
+    --     -- if TDMP_IsLobbyValid() then
+    --     --     TDMP_SetLobbyMap("Cool map" .. math.floor(GetTime()))
+    --     -- end
+    --     nextUpdate = GetTime() + 1
+		
+    --     TDMP_RefreshLobbiesList()
+	-- 	lobbyList.items = TDMP_GetLobbies()
+    --     for i, lobby in pairs(lobbyList.items) do
+    --          TDMP_Print(lobby.id .. "/ " .. lobby.name .. ":")
+    --     end
+    -- end
 end
 
 
@@ -864,24 +1036,27 @@ function drawPlayers()
 	end
 end
 
-function drawTdmp()
+function drawLobby(scale)
 
 	local bw = 206
 	local bh = 40
 	local bo = 48
 
 	local local_w = UiWidth() - 200
-	local local_h = UiHeight() - 300 
-
+	local local_h = UiHeight() - 300
+	
 	local subBoxH = 74*8+5 + 26+10+10+4 -- needs to be that cuz map selection window
 
 
 	UiPush()
-		UiTranslate(100, 200)
+		UiTranslate(UiCenter(), UiMiddle()+50)
+		-- UiTranslate(100, 200)
+		UiScale(scale)
 		UiColor(0,0,0,0.7)
 		UiFont("regular.ttf", 26)
+		UiAlign("center middle")
 		UiImageBox("common/box-solid-10.png", local_w, local_h, 10, 10)
-		UiWindow(UiWidth() - 200, UiHeight() - 300, true)
+		UiWindow(local_w, local_h, true)
 		UiColor(0, 0, 0, 0.75)
 
 		UiAlign("top left")
@@ -940,7 +1115,7 @@ function drawTdmp()
 
 		-- UiTranslate((local_w-25-25-438)/2, 0)
 		UiTranslate((local_w-25-25)/2-150, 0)
-		UiImageBox("common/box-solid-10.png", 300, (subBoxH-15)/2+30, 10, 10)
+		UiImageBox("common/box-solid-10.png", 300, (subBoxH-15)/2+30+10+bh, 10, 10)
 
 		UiPush()
 			UiTranslate(10, 10)
@@ -950,6 +1125,13 @@ function drawTdmp()
 			UiTranslate(0, 30)
 			UiColor(1, 1, 1, 1)
 			listMods(gMods[7], 300-20, (subBoxH-15)/2-20, true)
+			UiTranslate(0, (subBoxH-15)/2-20+10)
+			UiColor(1,1,1)
+			UiButtonImageBox("common/box-outline-fill-6.png", 6, 6, 0.96, 0.96, 0.96)
+			UiFont("regular.ttf", 26)
+			if UiTextButton("Select/modify mods", 300-20, bh) then
+				SetValue("modSelectionPopup", 1, "cosine", 0.25)
+			end
 		UiPop()
 		
 
@@ -1117,6 +1299,10 @@ function drawTdmp()
 			UiTranslate(-200 ,0)
 			if UiTextButton("create lobby",bw,bh*1.5) then
 				TDMP_CreateLobby(2)
+				-- 0 private
+				-- 1 friends/invitees
+				-- 2 public
+
 				--popup = {type = 1, nick = "inviter", die = TDMP_FixedTime() + 5, animation = 0, lobby = "lobbyId"}
 			end
 
@@ -1126,9 +1312,348 @@ function drawTdmp()
 			end
 		UiPop()
 
+
+	UiPop()
+end
+
+function sortLobbies(sortType)
+	if sortType == 1 then
+		table.sort(lobbyList.items, function(a, b) return string.lower(a.name) < string.lower(b.name) end)
+	elseif sortType == 2 then
+		table.sort(lobbyList.items, function(a, b) return string.lower(a.name) > string.lower(b.name) end)
+	elseif sortType == 3 then
+		table.sort(lobbyList.items, function(a, b) return string.lower(a.mapName) < string.lower(b.mapName) end)
+	elseif sortType == 4 then
+		table.sort(lobbyList.items, function(a, b) return string.lower(a.mapName) > string.lower(b.mapName) end)
+	elseif sortType == 5 then
+		table.sort(lobbyList.items, function(a, b) return a.activeMods < b.activeMods end)
+	elseif sortType == 6 then
+		table.sort(lobbyList.items, function(a, b) return a.activeMods > b.activeMods end)
+	elseif sortType == 7 then
+		table.sort(lobbyList.items, function(a, b) return a.playersCount < b.playersCount end)
+	elseif sortType == 8 then
+		table.sort(lobbyList.items, function(a, b) return a.playersCount > b.playersCount end)
+	elseif sortType == 9 then
+		table.sort(lobbyList.items, function(a, b) return a.ping < b.ping end)
+	elseif sortType == 10 then
+		table.sort(lobbyList.items, function(a, b) return a.ping > b.ping end)
+	end
+end
+
+function searchLobbies(where, what)
+	local index = ""
+	if where == 1 then index = "name" else index = "mapName" end
+	lobbyList.items = {}
+	for i, v in pairs(lobbyListRaw) do
+		if v[index]:match(what) then
+			lobbyList.items[#lobbyList.items+1] = v
+		end
+	end
+end
+
+function drawBrowser(scale)
+	local bw = 206
+	local bh = 40
+	local bo = 48
+
+	local local_w = UiWidth() - 200
+	local local_h = UiHeight() - 300
+	
+	local subBoxH = 74*8+5 + 26+10+10+4 -- needs to be that cuz map selection window
+
+	DebugWatch("lobby sort", lobbyList.sort)
+
+	UiPush()
+		UiTranslate(UiCenter(), UiMiddle()+50)
+		-- UiTranslate(100, 200)
+		UiScale(scale)
+		UiColor(0,0,0,0.7)
+		UiFont("regular.ttf", 26)
+		UiAlign("center middle")
+		UiImageBox("common/box-solid-10.png", local_w, local_h, 10, 10)
+		UiWindow(local_w, local_h, true)
+		UiColor(0, 0, 0, 0.5)
+
+		UiAlign("top left")
+		UiTranslate(25, 25)
+
+		-- UiImageBox("common/box-solid-10.png", bw*2, subBoxH, 10, 10)
+		-- UiPush()
+		-- 	UiTranslate(10,10)
+		-- 	UiWindow(bw*2-20, subBoxH-20, true)
+		-- 	UiFont("regular.ttf", 26)
+		-- 	UiColor(0.95, 0.95, 0.95, 1)
+		-- 	UiText("Lobby sorting")
+		-- 	UiFont("regular.ttf", 24)
+		-- 	UiTranslate(25, 50)
+		-- 	UiText("Serach")
+		-- UiPop()
+
+		-- UiTranslate(bw*2 + 25, 0)
 		UiPush()
-			UiTranslate(-(local_w-926)/2-250, local_h - 25 ) -- 926 = 25-25-438-438
-			drawSlideUpInfo()
+			UiTranslate(20, 0)
+			UiFont("regular.ttf", 24)
+			UiColor(0.95, 0.95, 0.95, 1)
+			UiText("Lobby Name")
+			UiPush()
+				UiPush()
+					if UiIsMouseInRect(115 + 10 + 11, 24) then
+						UiColor(1, 1, 1, 0.2)
+						UiRect(115 + 10 + 11, 24)
+					end
+					if UiBlankButton(115 + 10 + 11, 24) then
+						if lobbyList.sort == 1 then
+							lobbyList.sort = 2
+						else
+							lobbyList.sort = 1
+						end
+						sortLobbies(lobbyList.sort)
+						-- searchLobbies(0, "1")
+					end
+				UiPop()
+				if lobbyList.sort == 1 or lobbyList.sort == 2 then
+					UiAlign("center middle")
+					UiTranslate(115 + 10, 12)
+					UiRotate(90 + 180 *(lobbyList.sort))
+					UiImage("common/play.png")
+				end
+			UiPop()
+			UiTranslate(650, 0)
+			UiText("Map")
+			UiPush()
+				UiPush()
+					if UiIsMouseInRect(46 + 10 + 11, 24) then
+						UiColor(1, 1, 1, 0.2)
+						UiRect(46 + 10 + 11, 24)
+					end
+					if UiBlankButton(46 + 10 + 11, 24) then
+						if lobbyList.sort == 3 then
+							lobbyList.sort = 4
+						else
+							lobbyList.sort = 3
+						end
+						sortLobbies(lobbyList.sort)
+					end
+				UiPop()
+				if lobbyList.sort == 3 or lobbyList.sort == 4 then
+					UiAlign("center middle")
+					UiTranslate(46 + 10, 12)
+					UiRotate(90 + 180 *(lobbyList.sort-2))
+					UiImage("common/play.png")
+				end
+			UiPop()
+			UiTranslate(650, 0)
+			UiPush()
+				UiTranslate(30, 0)
+				UiAlign("top right")
+				UiText("Mods")
+				UiPush()
+					UiTranslate(10+11, 0)
+					UiPush()
+						if UiIsMouseInRect(55 + 10 + 11, 24) then
+							UiColor(1, 1, 1, 0.2)
+							UiRect(55 + 10 + 11, 24)
+						end
+						if UiBlankButton(55 + 10 + 11, 24) then
+							if lobbyList.sort == 5 then
+								lobbyList.sort = 6
+							else
+								lobbyList.sort = 5
+							end
+							sortLobbies(lobbyList.sort)
+						end
+					UiPop()
+					if lobbyList.sort == 5 or lobbyList.sort == 6 then
+						UiTranslate(-11, 12)
+						UiAlign("center middle")
+						UiRotate(90 + 180 *(lobbyList.sort-4))
+						UiImage("common/play.png")
+					end
+				UiPop()
+				UiTranslate(150, 0)
+				UiText("Players")
+				UiPush()
+					UiTranslate(10+11, 0)
+					UiPush()
+						if UiIsMouseInRect(70 + 10 + 11, 24) then
+							UiColor(1, 1, 1, 0.2)
+							UiRect(70 + 10 + 11, 24)
+						end
+						if UiBlankButton(70 + 10 + 11, 24) then
+							if lobbyList.sort == 7 then
+								lobbyList.sort = 8
+							else
+								lobbyList.sort = 7
+							end
+							sortLobbies(lobbyList.sort)
+						end
+					UiPop()
+					if lobbyList.sort == 7 or lobbyList.sort == 8 then
+						UiTranslate(-11, 12)
+						UiAlign("center middle")
+						UiRotate(90 + 180 *(lobbyList.sort-6))
+						UiImage("common/play.png")
+					end
+				UiPop()
+				UiTranslate(150, 0)
+				UiText("Ping")
+				UiPush()
+					UiTranslate(10+11, 0)
+					UiPush()
+						if UiIsMouseInRect(45 + 10 + 11, 24) then
+							UiColor(1, 1, 1, 0.2)
+							UiRect(45 + 10 + 11, 24)
+						end
+						if UiBlankButton(45 + 10 + 11, 24) then
+							if lobbyList.sort == 9 then
+								lobbyList.sort = 10
+							else
+								lobbyList.sort = 9
+							end
+							sortLobbies(lobbyList.sort)
+						end
+					UiPop()
+					if lobbyList.sort == 9 or lobbyList.sort == 10 then
+						UiTranslate(-11, 12)
+						UiAlign("center middle")
+						UiRotate(90 + 180 *(lobbyList.sort-8))
+						UiImage("common/play.png")
+					end
+				UiPop()
+			UiPop()
+		UiPop()
+		UiTranslate(0, 22+5)
+
+		local w, h = local_w - 25*2, subBoxH - 22 - 5
+		local length = 0
+		for i,v in pairs(lobbyList.items) do
+			length = length + 1
+		end
+
+		-- local rmb_pushed = false
+		if lobbyList.isdragging and InputReleased("lmb") then
+			lobbyList.isdragging = false
+		end
+		UiPush()
+			UiAlign("top left")
+			UiFont("regular.ttf", 22)
+	
+			local mouseOver = UiIsMouseInRect(w+12, h)
+			if mouseOver then
+				lobbyList.pos = lobbyList.pos + InputValue("mousewheel")
+				if lobbyList.pos > 0 then
+					lobbyList.pos = 0
+				end
+			end
+			if not UiReceivesInput() then
+				mouseOver = false
+			end
+	
+			local itemsInView = math.floor(h/UiFontHeight())
+			if length > itemsInView then
+				w = w - 14
+				local scrollCount = (length-itemsInView)
+				if scrollCount < 0 then scrollCount = 0 end
+	
+				local frac = itemsInView / length
+				local pos = -lobbyList.possmooth / length
+				if lobbyList.isdragging then
+					local posx, posy = UiGetMousePos()
+					local dy = 0.0445 * (posy - lobbyList.dragstarty)
+					lobbyList.pos = -dy / frac
+				end
+	
+				UiPush()
+					UiTranslate(w, 0)
+					UiColor(1,1,1, 0.07)
+					UiImageBox("common/box-solid-4.png", 14, h, 4, 4)
+					UiColor(1,1,1, 0.2)
+	
+					local bar_posy = 2 + pos*(h-4)
+					local bar_sizey = (h-4)*frac
+					UiPush()
+						UiTranslate(2,2)
+						if bar_posy > 2 and UiIsMouseInRect(8, bar_posy-2) and InputPressed("lmb") then
+							lobbyList.pos = lobbyList.pos + frac * length
+						end
+						local h2 = h - 4 - bar_sizey - bar_posy
+						UiTranslate(0,bar_posy + bar_sizey)
+						if h2 > 0 and UiIsMouseInRect(10, h2) and InputPressed("lmb") then
+							lobbyList.pos = lobbyList.pos - frac * length
+						end
+					UiPop()
+	
+					UiTranslate(2,bar_posy)
+					UiImageBox("common/box-solid-4.png", 10, bar_sizey, 4, 4)
+					--UiRect(10, bar_sizey)
+					if UiIsMouseInRect(10, bar_sizey) and InputPressed("lmb") then
+						local posx, posy = UiGetMousePos()
+						lobbyList.dragstarty = posy
+						lobbyList.isdragging = true
+					end
+				UiPop()
+				lobbyList.pos = clamp(lobbyList.pos, -scrollCount, 0)
+			else
+				lobbyList.pos = 0
+				lobbyList.possmooth = 0
+			end
+	
+			UiWindow(w, h, true)
+			UiColor(1,1,1,0.07)
+			UiImageBox("common/box-solid-6.png", w, h, 6, 6)
+	
+			-- UiTranslate(10, 24)
+			UiTranslate(10, 19)
+
+			DebugWatch("lobby list pos", lobbyList.pos)
+
+			if lobbyList.isdragging then
+				lobbyList.possmooth = lobbyList.pos
+			else
+				lobbyList.possmooth = lobbyList.possmooth + (lobbyList.pos-lobbyList.possmooth) * 10 * GetTimeStep()
+			end
+			UiTranslate(0, lobbyList.possmooth*22)
+
+			UiAlign("left")
+			UiColor(0.95,0.95,0.95,1)
+			for i,v in pairs(lobbyList.items) do
+				UiPush()
+					-- UiTranslate(10, -18)
+					UiTranslate(-5, -16)
+					if mouseOver and UiIsMouseInRect(w, 22) and not inMenu then
+						UiColor(1, 1, 1, 0.5)
+						if InputPressed("lmb") then
+							UiSound("terminal/message-select.ogg")
+							TDMP_Print(v.id)
+							-- TDMP_JoinLobby(v.id)
+						end
+						UiImageBox("common/box-outline-6.png", w-7, 22, 6, 6)
+					end
+
+				UiPop()
+	
+				UiPush()
+					UiTranslate(10, 0) -- 1433
+					-- end
+					UiText(v.name)
+					UiTranslate(650,0)
+					UiText((v.mapName ~="") and v.mapName or "---")
+					UiTranslate(650,0)
+					UiPush()
+					UiTranslate(30, 0)
+						UiAlign("right")
+						UiText(v.activeMods)
+						UiTranslate(150,0)
+						UiText(v.playersCount .. "/" .. v.maxPlayers)
+						UiTranslate(150,0)
+						UiText(v.ping)
+					UiPop()
+					-- UiTranslate(100,0)
+					-- UiText(tostring(v.isPrivate))
+				UiPop()
+
+				UiTranslate(0, 22)
+			end
 		UiPop()
 
 	UiPop()
@@ -1144,9 +1669,15 @@ function draw()
 		UiWindow(x1-x0,y1-y0, true)
 
 		drawBackground()
-		topBar()
+		
+		if drawLobbyScale > 0 then
+			drawLobby(drawLobbyScale)
+		end
+		if drawBrowserScale > 0 then
+			drawBrowser(drawBrowserScale)
+		end
 
-		drawTdmp()
+		topBar()
 
 		if modSelectionPopup > 0 then
 			UiPush()
@@ -1161,6 +1692,12 @@ function draw()
 			UiPop()
 		end
 		
+	UiPop()
+
+	UiPush()
+		UiTranslate(UiCenter()-250, UiHeight())
+		-- UiTranslate(-(local_w-926)/2-250, local_h - 25 ) -- 926 = 25-25-438-438
+		drawSlideUpInfo()
 	UiPop()
 
 	UiPush()
@@ -1410,7 +1947,7 @@ function deactivateMods()
 end
 
 function tdmpEnableMods()
-	TDMP_Print("got mod enable func")
+	-- TDMP_Print("got mod enable func")
 	deactivateMods()
 	ClearKey("savegame.mod.tdmp.spawnables")
 	-- if amIhost then
@@ -1430,7 +1967,7 @@ function tdmpEnableMods()
 	-- 		SetBool("savegame.mod.tdmp.spawnables."..v.id, true)
 	-- 	end
 	-- end
-	TDMP_Print("finished mod enable func")
+	-- TDMP_Print("finished mod enable func")
 end
 
 function tdmpStartGame()
@@ -1443,7 +1980,7 @@ function tdmpStartGame()
 			if tdmpSelectedMap.isMod then
 				TDMP_Print("mod:", tdmpSelectedMap.id)
 				TDMP_StartLevel(true, tdmpSelectedMap.id)
-				Command("mods.play", tdmpSelectedMap.id)
+				--Command("mods.play", tdmpSelectedMap.id)
 			else
 				local mapinfo
 				for i,v in pairs(gMods[4].items) do
@@ -1452,12 +1989,12 @@ function tdmpStartGame()
 					end
 				end
 				TDMP_Print("not mod:", mapinfo.id.." "..mapinfo.file.." ".. mapinfo.layers)
-				TDMP_StartLevel(false, tdmpSelectedMap.id, tdmpSelectedMap.file, tdmpSelectedMap.layers)
-				if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
-					StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
-				else
-					UiSound("error.ogg")
-				end
+				TDMP_StartLevel(false, mapinfo.id, mapinfo.file, mapinfo.layers)
+				-- if TDMP_IsLobbyOwner(TDMP_LocalSteamID) or TDMP_IsServerExists() then
+				-- 	StartLevel(tdmpSelectedMap.id,tdmpSelectedMap.file, tdmpSelectedMap.layers)
+				-- else
+				-- 	UiSound("error.ogg")
+				-- end
 			end
 		end
 	else
@@ -1467,27 +2004,30 @@ end
 
 
 function loadLevel(mod, a)
-	if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then return end
-	tdmpEnableMods()
+	TDMP_Print("load level called")
+	-- if TDMP_IsLobbyOwner(TDMP_LocalSteamID) then return end
+	-- tdmpEnableMods()
 	
-	TDMP_Print("mod: ", mod)
-	TDMP_Print("a: ", a)
-	if mod then
-		-- local modId = a
-		-- -- if (string.sub(modId, 1, 6) == "steam-") and not HasKey("mods.available."..modId) then
-		-- -- 	Command("mods.subscribe", modId)
-		-- -- 	pendingLevel[#pendingLevel + 1] = modId
-		-- -- 	loadOnModMap = modId
-		-- -- else
-		-- -- 	loadOnModMap = nil
-		-- -- 	downloadingMod = 0
-		-- -- end
-		Command("mods.play", a)
-	else
-		a = json.decode(a)
-		TDMP_Print("loadlevel:", a[1])
-		StartLevel(a[1], a[2], a[3])
-	end
+	-- TDMP_Print("mod: ", mod)
+	-- TDMP_Print("a: ", a)
+	-- DebugPrint("mod: ", mod)
+	-- DebugPrint("a: ", a)
+	-- if mod then
+	-- 	-- local modId = a
+	-- 	-- -- if (string.sub(modId, 1, 6) == "steam-") and not HasKey("mods.available."..modId) then
+	-- 	-- -- 	Command("mods.subscribe", modId)
+	-- 	-- -- 	pendingLevel[#pendingLevel + 1] = modId
+	-- 	-- -- 	loadOnModMap = modId
+	-- 	-- -- else
+	-- 	-- -- 	loadOnModMap = nil
+	-- 	-- -- 	downloadingMod = 0
+	-- 	-- -- end
+	-- 	Command("mods.play", a)
+	-- else
+	-- 	a = json.decode(a)
+	-- 	TDMP_Print("loadlevel:", a[1])
+	-- 	StartLevel(a[1], a[2], a[3])
+	-- end
 end
 
 function modDownloadTick()
@@ -1634,9 +2174,6 @@ end
 
 function memberStateChange(steamId, connected)
 	TDMP_Print(steamId, connected and "true" or "false")
-end
-
-function loadLevel(mod, a)
 end
 
 -- end of that
